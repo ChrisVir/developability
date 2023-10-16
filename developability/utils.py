@@ -2,6 +2,7 @@
 from pathlib import Path
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
+from abnumber import Chain
 from .descriptors import map3to1
 
 
@@ -85,3 +86,28 @@ def clean_logs():
     cwd = Path().cwd() 
     _ = [file.unlink() for file in ls(cwd, False) if file.name.startswith('log') & (file.name.endswith('.err') | file.name.endswith('.out'))]
     return None
+
+
+def determine_chain_type(seqs, scheme='kabat'): 
+    """Given a dict of sequences from antibody Fab region, determine which is sequence 
+    is heavy or light chain respectively, and returns light and then heavy chain 
+
+    Args:
+        seqs(dict): dict with key as Chain Name and value as seq. 
+        scheme(str): the scheme for numbering and identifying heavy/light chain. 
+    Returns: 
+        tuple(str, str): returns the light chain and heavy chain seqs 
+    """
+
+    chains = {}
+    
+    for seq in seqs.values(): 
+        chain = Chain(seq,scheme )
+        if chain.is_heavy_chain(): 
+            chains.setdefault('H', seq)
+        elif chain.is_light_chain(): 
+            chains.setdefault('L', seq)
+        else: 
+            pass
+    
+    return chains['L'], chains['H']

@@ -4,7 +4,7 @@ from developability.energy_minimization import EnergyMinimizer
 from developability.electrostatics import APBS
 from developability.surface import SurfacePotential
 from developability.descriptors import descriptor_pipeline
-from developability.utils import extract_sequence_from_pdb, clean_logs
+from developability.utils import extract_sequence_from_pdb, clean_logs, determine_chain_type
 
 
 def run_processing_pipeline(input_pdb, output_path=None, nanoshaper_options=None):
@@ -31,8 +31,7 @@ def run_processing_pipeline(input_pdb, output_path=None, nanoshaper_options=None
 
     # get the sequence from the input pdb
     sequences = extract_sequence_from_pdb(input_pdb)
-    light_chain_seq = sequences['L']
-    heavy_chain_seq = sequences['H']
+    light_chain_seq , heavy_chain_seq = determine_chain_type(sequences)
 
     # Calculate the descriptors
     antibody_name = input_pdb.name.split('.')[0]
