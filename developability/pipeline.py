@@ -7,17 +7,18 @@ from developability.descriptors import descriptor_pipeline
 from developability.utils import extract_sequence_from_pdb, clean_logs
 
 
-def run_processing_pipeline(input_pdb, nanoshaper_options=None):
+def run_processing_pipeline(input_pdb, output_path=None, nanoshaper_options=None):
     """Runs pipeline on individual antibody to extract features. 
     Args:
-        input_pdb (_type_): _description_
-        nanoshaper_options(dict)
+        input_pdb (path|str): path to input_pdb
+        output_path(path|str): path to output
+        nanoshaper_options(dict): options for nanoshaper. 
     Returns: 
         descriptors (pd.DataFrame): one row dataframe. 
     """
     
     # minimize the energy 
-    minimizer=EnergyMinimizer(input_pdb)
+    minimizer=EnergyMinimizer(input_pdb, output_path = output_path)
     minimized_pdb = minimizer.minimize_energy()
 
     # compute electrostatics
@@ -25,7 +26,7 @@ def run_processing_pipeline(input_pdb, nanoshaper_options=None):
     pqr_file, dx_file = apbs.calculate_potential()
 
     # compute the surface
-    surface = SurfacePotential(pqr_file, dx_file, nanoshaper_options=None)
+    surface = SurfacePotential(pqr_file, dx_file, nanoshaper_options=nanoshaper_options)
     residue_pot_file = surface.calculate_surface_potential()
 
     # get the sequence from the input pdb
