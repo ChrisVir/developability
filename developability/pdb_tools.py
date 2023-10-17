@@ -86,7 +86,7 @@ def count_oxt( fixer):
     return sum(1 for atom in fixer.topology.atoms() if atom.name == 'OXT')
 
 
-def corrext_oxt(pdb, output_filename=None): 
+def correct_oxt(pdb, output_filename=None): 
     """ converts interal OXT to O for chains
     Args: 
         pdb (PDBFixer|str|path): path or fixer object
