@@ -95,7 +95,7 @@ def correct_oxt(pdb, output_filename=None):
         None
     """
     if isinstance(pdb, (str, Path)):
-        fixer = PDBFixer(pdb)
+        fixer = PDBFixer(str(pdb))
     elif isinstance(pdb, PDBFixer): 
         fixer = pdb
 
@@ -115,15 +115,15 @@ def correct_oxt(pdb, output_filename=None):
     
 
 
-    def write_fixer_pdb(fixer, output_filename, keep_ids=True): 
-        """Writes out the pdb fixer.
+def write_fixer_pdb(fixer, output_filename, keep_ids=True): 
+    """Writes out the pdb fixer.
 
-        Args:
-            fixer (pdbfixer.PDBFixer): fixer object
-            output_filename (str|Path):  path for output file 
-            keep_ids(bool, optional): If True keep original ids. 
-        Returns: 
-            None
-        """
-        PDBFile.writeFile(fixer.topology, fixer.positions, open(output_filename, 'w'), 
-                          keepIds = keep_ids)
+    Args:
+        fixer (pdbfixer.PDBFixer): fixer object
+        output_filename (str|Path):  path for output file 
+        keep_ids(bool, optional): If True keep original ids. 
+    Returns: 
+        None
+    """
+    PDBFile.writeFile(fixer.topology, fixer.positions, open(str(output_filename), 'w'), 
+                        keepIds = keep_ids)
