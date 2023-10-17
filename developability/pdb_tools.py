@@ -72,3 +72,34 @@ def fix_antibody(antibody_file, chains_to_keep=[], output_file_name=None, output
     output = str(output_path /output_file_name)
     PDBFile.writeFile(fixer.topology, fixer.positions, open(output, 'w'), keepIds = keep_ids)
     return fixer
+
+
+def count_oxt( fixer): 
+    """counts the number of OXT atoms in pdb via fixer
+
+    Args:
+        fixer (pdbfixer.PDBFixer): fixer object
+
+    Returns:
+        int: the number of OXT atoms in all chains. 
+    """
+    return sum(1 for atom in fixer.topology.atoms() if atom.name == 'OXT')
+
+
+def corrext_oxt(fixer): 
+    """ converts interal OXT to O for chains
+    Args: 
+        fixer(pdbfixer.PDBFixer)
+    Returns 
+        fixer
+    """
+    num_oxt_fixed = 0
+    for chain in fixer.topology.chains(): 
+        n = len(list(chain.residues()))
+        for atom in chain.atoms(): 
+            if atom.residue.id!=str(n) and atom.residue.id!=str(0) and atom.name=='OXT': 
+                atom.name = 'O'
+                num_oxt_fixed+=1
+
+    print(f'The number of OXT atoms is {count_oxt(fixer)}.')
+    print(f'The number of OXT->O is {num_oxt_fixed}.')
