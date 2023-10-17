@@ -1,5 +1,5 @@
 # functions for manipulating /cleaning PDBs. 
-
+from pathlib import Path
 from pdbfixer import PDBFixer
 from openmm.app import PDBFile
 
@@ -86,13 +86,19 @@ def count_oxt( fixer):
     return sum(1 for atom in fixer.topology.atoms() if atom.name == 'OXT')
 
 
-def corrext_oxt(fixer): 
+def corrext_oxt(pdb, output_filename=None): 
     """ converts interal OXT to O for chains
     Args: 
-        fixer(pdbfixer.PDBFixer)
+        pdb (PDBFixer|str|path): path or fixer object
+        output_filename(str|Path, optional): if not None, path to write out. Defaults to None. 
     Returns 
-        fixer
+        None
     """
+    if isinstance(pdb, (str, Path)):
+        fixer = PDBFixer(pdb)
+    elif isinstance(pdb, PDBFixer): 
+        fixer = pdb
+
     num_oxt_fixed = 0
     for chain in fixer.topology.chains(): 
         n = len(list(chain.residues()))
@@ -103,3 +109,21 @@ def corrext_oxt(fixer):
 
     print(f'The number of OXT atoms is {count_oxt(fixer)}.')
     print(f'The number of OXT->O is {num_oxt_fixed}.')
+
+    if output_filename: 
+        write_fixer_pdb(fixer, output_filename)
+    
+
+
+    def write_fixer_pdb(fixer, output_filename, keep_ids=True): 
+        """Writes out the pdb fixer.
+
+        Args:
+            fixer (pdbfixer.PDBFixer): fixer object
+            output_filename (str|Path):  path for output file 
+            keep_ids(bool, optional): If True keep original ids. 
+        Returns: 
+            None
+        """
+        PDBFile.writeFile(fixer.topology, fixer.positions, open(output_filename, 'w'), 
+                          keepIds = keep_ids)
