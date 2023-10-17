@@ -24,13 +24,19 @@ def remove_chains(fixer, chains_to_keep):
     return fixer
 
 
-def fix_antibody(antibody_file, chains_to_keep=[], output_path=None, keep_ids=False, fix_internal_residues_only=True): 
+def fix_antibody(antibody_file, chains_to_keep=[], output_file_name=None, output_path=None, keep_ids=False, 
+                 fix_internal_residues_only=True): 
     """Uses PDB fixer to fix antibody
-    Args: 
+    Args:
         antibody_file(str|Path): file path
         chains_to_keep(list[str]): list of Fab chains to keep
-    Returns: 
-        None
+        output_file_name (str): name of file. Defaults to None.
+        output_path (str|Path): dir for output. Defaults to None.
+        keep_ids (bool, optional): If true, keep the ids and numbering from input pdb. Defaults to False.
+        fix_internal_residues_only (bool, optional): If true, fix only internal residues. Defaults to True.
+
+    Returns:
+        PDBFixer: the fixer object. 
     """
     fixer = PDBFixer(str(antibody_file))
 
@@ -57,9 +63,12 @@ def fix_antibody(antibody_file, chains_to_keep=[], output_path=None, keep_ids=Fa
     fixer.addMissingAtoms()
 
     # save
+    if not output_file_name:
+        output_file_name = antibody_file.name
+
     if not output_path: 
         output_path = antibody_file.parent
 
-    output = str(output_path /antibody_file.name)
+    output = str(output_path /output_file_name)
     PDBFile.writeFile(fixer.topology, fixer.positions, open(output, 'w'), keepIds = keep_ids)
     return fixer
