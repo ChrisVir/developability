@@ -114,7 +114,6 @@ def correct_oxt(pdb, output_filename=None):
         write_fixer_pdb(fixer, output_filename)
     
 
-
 def write_fixer_pdb(fixer, output_filename, keep_ids=True): 
     """Writes out the pdb fixer.
 
