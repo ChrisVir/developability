@@ -2,6 +2,9 @@
 from pathlib import Path
 from pdbfixer import PDBFixer
 from openmm.app import PDBFile
+from biopandas.pdb import PandasPdb
+from Bio.PDB import PDBParser
+from Bio.PDB.PDBIO import PDBIO, Select
 
 def remove_chains(fixer, chains_to_keep): 
     """Uses fixer.remove_chains to remove chains not present in chain_to_keep. Keeps the first occurence of each chain. 
@@ -126,3 +129,126 @@ def write_fixer_pdb(fixer, output_filename, keep_ids=True):
     """
     PDBFile.writeFile(fixer.topology, fixer.positions, open(str(output_filename), 'w'), 
                         keepIds = keep_ids)
+    
+
+def download_pdb(pdb_id, protein_name='',output_path=None, atoms_only=False): 
+    """Uses BioPandas to download pdb from Protein DataBank
+
+    Args:
+        pdb_id (str): The PDB
+        protein_name (str, optional): Name of the protein. Defaults to ''.
+        output_path (str|Path, optional): path for directory to save. Defaults to None.
+        atoms_only (bool, optional): If true, write out the atoms only. . Defaults to False.
+    """
+
+    pdb= PandasPdb()
+    p = pdb.fetch_pdb(pdb_id)
+
+    if not output_path: 
+        output_path = Path().cwd()
+    
+    if atoms_only:
+        p.to_pdb(output_path/f'{protein_name}_{pdb_id}.pdb', records =['ATOM'])
+    else:
+        p.to_pdb(output_path/f'{protein_name}_{pdb_id}.pdb')
+
+
+class ChainSelect(Select): 
+    def __init__(self, chain_ids):
+        """Select for getting specific chains
+
+        Args:
+            chain_ids (list[str]): list of chain ids
+        """
+        self.chain_ids = chain_ids
+
+    def accept_chain(self, chain): 
+        if chain.get_id() in self.chain_ids: 
+            return True
+        else: 
+            return False
+
+
+def save_pdb_with_select_chains(input_pdb, chains, output_path=None): 
+    """Saves pdbs as new file with select chains only
+    Args:
+        input_pdb (Path|str): Path to the input_pdb
+        chains (list[str]): list of names for chain
+        output_path (Path|str, optional): Output path. Defaults to None.
+    Returns:
+        None
+    """
+    input_pdb = Path(input_pdb)
+    name = input_pdb.name.split('.')[0]
+    output_name = f'{name}_{"".join(chains)}.pdb'
+
+    if not output_path: 
+        output_path = input_pdb.parent
+        
+    parser = PDBParser()
+    struct= parser.get_structure(name, str(input_pdb))
+    
+    io = PDBIO()
+    io.set_structure(struct)
+    io.save(str(output_path/output_name),ChainSelect(chains))
+
+
+def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'): 
+    """extracts the fv region from pdb and saves
+    Args:
+        pdb (str|path): path to pdb file with ab
+        output_pdb (str|path): path to output
+    Returns: 
+        Path: to new object
+    """
+    
+    seqs = extract_sequence_from_pdb(pdb)
+    
+    fvs = {}
+    for name, seq in seqs.items(): 
+        chain = Chain(seq, scheme = scheme)
+        fvs[name] = chain.seq
+
+    pdb_name = Path(pdb).name.split('.')[0]
+    parser = PDBParser()
+    struct= parser.get_structure(pdb_name,pdb)
+
+    # now get the regions of interest for each chain. 
+    for chain  in struct.get_chains(): 
+        chain_id = chain.id
+
+        new_child_dict = {}
+        new_child_list = []
+        
+        # find the locations of the fv region in the PDB chain object
+        fv = fvs[chain_id]
+        seq = seqs[chain_id]
+        start = seq.find(fv) 
+        end = start+ len(fv)
+        
+        # iterate through the PDB chain object and add the residues of interest.
+        residue_num = 1
+        num = 0
+        for residue_id, residue in chain.child_dict.items(): 
+            
+            if (num>= start) & (num <end):
+                new_id = (residue_id[0], residue_num, residue_id[2] )
+                new_residue = residue.copy()
+                new_residue.id = new_id
+                
+                new_child_dict[new_id] = new_residue
+                new_child_list.append(new_residue)
+                residue_num+=1
+            
+            num+=1
+        chain.child_dict = new_child_dict
+        chain.child_list = new_child_list 
+    
+    # save the pdb
+    if not output_pdb: 
+        output_pdb = Path(pdb).with_suffix('.fv_only.pdb')
+    pdb_io = PDBIO()
+    pdb_io.set_structure(struct)
+    pdb_io.save(str(output_pdb))
+
+    return output_pdb
