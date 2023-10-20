@@ -5,6 +5,9 @@ from openmm.app import PDBFile
 from biopandas.pdb import PandasPdb
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO, Select
+from abnumber import Chain
+
+from .utils import extract_sequence_from_pdb
 
 def remove_chains(fixer, chains_to_keep): 
     """Uses fixer.remove_chains to remove chains not present in chain_to_keep. Keeps the first occurence of each chain. 
@@ -194,7 +197,8 @@ def save_pdb_with_select_chains(input_pdb, chains, output_path=None):
 
 
 def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'): 
-    """extracts the fv region from pdb and saves
+    """extracts the fv region from pdb and saves pdb. 
+    The PDB has VH then VL. 
     Args:
         pdb (str|path): path to pdb file with ab
         output_pdb (str|path): path to output
@@ -204,10 +208,16 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
     
     seqs = extract_sequence_from_pdb(pdb)
     
-    fvs = {}
+    fv_sequences = {}
+    fv_chains = {}
+
     for name, seq in seqs.items(): 
         chain = Chain(seq, scheme = scheme)
-        fvs[name] = chain.seq
+        fv_sequences[name] = chain.seq
+        if chain.is_heavy_chain(): 
+            fv_chains[name]="H"
+        else: 
+            fv_chains[name]="L"
 
     pdb_name = Path(pdb).name.split('.')[0]
     parser = PDBParser()
@@ -221,7 +231,7 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
         new_child_list = []
         
         # find the locations of the fv region in the PDB chain object
-        fv = fvs[chain_id]
+        fv = fv_sequences[chain_id]
         seq = seqs[chain_id]
         start = seq.find(fv) 
         end = start+ len(fv)
@@ -241,8 +251,15 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
                 residue_num+=1
             
             num+=1
+
+        # update the chains
         chain.child_dict = new_child_dict
-        chain.child_list = new_child_list 
+        chain.child_list = new_child_list
+        chain.id=fv_chains[chain_id]
+
+    #update the order of chains.
+    model = struct.child_dict[0]
+    model.child_list = [model.child_dict['H'], model.child_dict['L']]
     
     # save the pdb
     if not output_pdb: 
