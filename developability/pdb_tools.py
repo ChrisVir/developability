@@ -208,6 +208,7 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
     
     seqs = extract_sequence_from_pdb(pdb)
     
+    # dicts to hold info. 
     fv_sequences = {}
     fv_chains = {}
 
