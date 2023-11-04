@@ -1,7 +1,11 @@
 # utils 
+
 from pathlib import Path
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
 from abnumber import Chain
 from .descriptors import map3to1
 
@@ -61,16 +65,20 @@ def renumber_pdb(input_pdb, output_pdb=None):
 
 
 def extract_sequence_from_pdb(pdb):
-    """Extracts the sequences from pdb file as a 1 letter code
+    """Extracts the sequences from pdb file or pdb Structure as a 1 letter code
     Args: 
-        pdb(str|Path): path to pdb file
+        pdb(str|Path|structure): path to pdb file
     Returns: 
         sequences(dict): dict of sequences of individual chains. 
     """
-    parser=  PDBParser()
-
+    
     sequences = {}
-    struct= parser.get_structure('pdb', str(pdb))
+    if isinstance(pdb, str) or isinstance(pdb, Path):
+        parser=  PDBParser()
+        struct= parser.get_structure('pdb', str(pdb))
+    else:
+        struct = pdb
+    
     for model in struct: 
         for chain in model:
             id = chain.id
@@ -111,3 +119,23 @@ def determine_chain_type(seqs, scheme='kabat'):
             pass
     
     return chains['L'], chains['H']
+
+
+#### Viz
+def plot_correlogram(d, cmap='RdBu',title = None,  method = 'pearson', figsize = (11,9)):
+
+    # Compute the correlation matrix
+    corr = d.corr(method = method)
+
+    # Generate a mask for the upper triangle
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+
+    # Set up the matplotlib figure
+    f, ax = plt.subplots(figsize=figsize)
+
+    # Draw the heatmap with the mask and correct aspect ratio
+    sns.heatmap(corr, mask=mask, cmap=cmap, center=0,
+                square=True, linewidths=.5, cbar_kws={"shrink": .5}, ax = ax)
+    
+    if title: 
+        ax.set(title = title)

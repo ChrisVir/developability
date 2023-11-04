@@ -1,20 +1,21 @@
 # calculates descriptors from csv file
 import pandas as pd
 from abnumber import Chain
-from Bio.Data.IUPACData import protein_letters_3to1
+from Bio.SeqUtils import seq1
 
 
-def map3to1(residues):
+def map3to1(residues, custom_map=None):
     """ uses dict to map proteins 3 letter code  to 1 letter code
     Args: 
         residues(list): list of 1 code residues
+        custom_map(dict): dict of custom mappings
     Returns
         three_code(list)
     """
+    if not custom_map:
+        custom_map={'CYX':'C', 'HIE':'H'}
 
-    #TODO: Handle noncanonical residues
-
-    return [protein_letters_3to1.get(aa.capitalize(), '') for aa in residues]
+    return [seq1(aa,custom_map) for  aa in residues]
 
 
 def chain_to_df(chain): 
@@ -37,7 +38,6 @@ def chain_to_df(chain):
                             )
                        )
     if chain.chain_type=="H": 
-        
         chain_type = "H" 
     else: 
         chain_type ="L"
@@ -46,34 +46,58 @@ def chain_to_df(chain):
     return regions_df
 
 
-def map_region_to_ab_seq(light_chain_seq,heavy_chain_seq, residue_pot_df, scheme='kabat'):
-    """Uses Abnumber to annoate residues of sequence and maps to residue potential dataframe
-    Args:
-        light_chain_seq(str): the light chain sequence
-        heavy_chain_seq(str): the heavy chain sequence
-        residue_pot_df(pd.DataFrame): the data frame with summed potential per residue. 
-        scheme(str): the CDR annotation scheme to use
-    Returns: 
-        pd.DataFrame
+def extract_sequence_from_residue_potential_df(residue_potential_df): 
+    """ Extract the sequence from a residue potential dataframe
+    Args: 
+        residue_potential_df (pd.DataFrame): dataframe with the residue potential
+    Returns:
+        seq (str): sequence of the antibody
     """
 
+    seq = ''.join(map3to1(residue_potential_df['Residue_name'].values))
+    return seq
+
+
+def annotate_residues_with_fv_regions(sequences, residue_pot_df, scheme = 'kabat'):
+    """Args: 
+        sequences (dict): dictionary of the sequences of the antibody
+        residue_pot_df (pd.DataFrame): dataframe with the residue potential
+        
+    Returns:
+        residue_pot_df (pd.DataFrame): dataframe with the residue potential annotated with the FV regions
+    """
+
+    target_sequence = extract_sequence_from_residue_potential_df(residue_pot_df)
+    
     # Use Abnumber to identify CDR regions for both light and heavy chain and merge into a single dataframe 
+    light_chain_seq, heavy_chain_seq = sequences['L'], sequences['H']
+    
     light_chain = Chain(light_chain_seq, scheme=scheme)
     heavy_chain = Chain(heavy_chain_seq, scheme=scheme)
     
     light_regions = chain_to_df(light_chain)
     heavy_regions = chain_to_df(heavy_chain)
-    
-    both_regions = pd.concat([ light_regions,heavy_regions])
-    both_regions['Residue_number']=range(1, len(both_regions)+1)
 
-    # combine with potential data
-    one_code = map3to1(residue_pot_df['Residue_name'])  # annotate 3 code with 1 code for aa
-    residue_pot_df.insert(2,'Residue' , one_code)
-    residue_pot_df = residue_pot_df.merge(both_regions, 
-                                          how = 'left', 
-                                          on=['Residue', 'Residue_number']
-                                          )
+    if sequences['H']+ sequences['L'] == target_sequence: 
+        residue = list(sequences['H'] + sequences['L'])
+        fv_chain = ['H']*len(sequences['H']) + ['L']*len(sequences['L'])
+        fv_number = list(range(1, len(sequences['H'])+1)) + list(range(1, len(sequences['L'])+1))
+        fv_region = list(heavy_regions['Region']) + list(light_regions['Region'])
+    
+    elif sequences['L']+ sequences['H'] == target_sequence:
+        residue = list(sequences['L'] + sequences['H'])
+        fv_chain = ['L']*len(sequences['L']) + ['H']*len(sequences['H'])
+        fv_number = list(range(1, len(sequences['L'])+1)) + list(range(1, len(sequences['H'])+1))
+        fv_region = list(light_regions['Region']) + list(heavy_regions['Region'])
+    else: 
+        raise ValueError('Could not determine chain order')
+    
+    ### New values to the df 
+    residue_pot_df['Residue'] = residue
+    residue_pot_df['FV_chain'] = fv_chain
+    residue_pot_df['FV_Residue_number'] = fv_number
+    residue_pot_df['FV_region'] = fv_region
+
     return residue_pot_df
 
 def name(func): 
@@ -85,34 +109,59 @@ def region_potentials(residue_pot_df):
     """ Calculates the potentials for regions
     TODO: refactor this function to make cleaner. 
     Args: 
-        residue_pot_df(pd.DataFrame): The data frame with potentials
+        residue_pot_df(pd.DataFrame): annotated DataFrame with the residue potentials 
     Returns: 
         vals(dict): dict with values
 
     """
     
-    cdrs = ['CDR1', 'CDR2', 'CDR3', 'FR1', 'FR2', 'FR3', 'FR4', 'FR5']
-    chains = ['H', 'L']
+    def calculate_total_potential(region, chain, charge='pos'): 
+        """ Calculates the potential for a region
+        Args: 
+            region(str|list[str]): the region to calculate
+            chain(str|list[str]): the chain to calculate
+            charge(str): the charge to calculate
+        Returns: 
+            float: the potential for the region
+        """
 
-    # calculate for cdrs
-    pos_df =  residue_pot_df.loc[residue_pot_df['total_pot']>=0]
-    neg_df =  residue_pot_df.loc[residue_pot_df['total_pot']<0]
+        if isinstance(region, str):
+            region = [region]   
+
+        if isinstance(chain, str):  
+            chain = [chain]
+
+        if charge=='pos':
+            df = residue_pot_df.query('total_pot > 0')
+        elif charge=='neg':
+            df = residue_pot_df.query('total_pot < 0')
+        elif charge=='net':
+            df = residue_pot_df
+        else:
+            raise ValueError('charge must be pos, neg or net')    
+        return df.loc[df.FV_region.isin(region) & df.FV_chain.isin(chain)]['total_pot'].sum()
+            
+    cdrs = ['CDR1','CDR2', 'CDR3']
+    frameworks = ['FR1','CDR2', 'CDR3']
+    all_regions = cdrs + frameworks
+    chains = ['H', 'L']
     
-    vals = {f'{chain}{cdr}_APBS_pos':pos_df.query("Region==@cdr & Chain==@chain")['total_pot'].sum() 
-            for cdr in cdrs for chain in chains}
+    charges = ['pos', 'neg', 'net']
+
+    vals = {f'{chain}{region}_APBS_{charge}': calculate_total_potential(region, chain, charge) for 
+            chain in chains for region in all_regions for charge in charges}
     
-    vals.update({f'{chain}{cdr}_APBS_neg':neg_df.query("Region==@cdr & Chain==@chain")['total_pot'].sum() 
-            for cdr in cdrs for chain in chains}
-               )
+    vals.update( {f'{chain}CDR_APBS_{charge}': calculate_total_potential(cdrs, chain, charge) for
+                  chain in chains for charge in charges})
     
-    #calculate net potential per cdr
-    vals.update( {f'{chain}{cdr}_APBS_net':residue_pot_df.query("Region==@cdr & Chain==@chain")['total_pot'].sum() 
-            for cdr in cdrs for chain in chains})
+    vals.update( {f'{chain}FR_APBS_{charge}': calculate_total_potential(frameworks, chain, charge) for
+                  chain in chains for charge in charges})
+
+    vals.update( {f'{chain}C_APBS_{charge}': calculate_total_potential(all_regions, chain, charge) for
+                  chain in chains for charge in charges})
     
-    # total positive and negative charge
-    vals['CDR_APBS_pos']= pos_df.loc[pos_df.Region.isin(cdrs)]['total_pot'].sum()
-    vals['CDR_APBS_neg']= neg_df.loc[neg_df.Region.isin(cdrs)]['total_pot'].sum()
-    vals['CDR_APBS_net']= residue_pot_df.loc[residue_pot_df.Region.isin(cdrs)]['total_pot'].sum()
+    vals.update({f'TOTAL_APBS_{charge}': calculate_total_potential(all_regions, chains, charge) 
+                  for charge in charges})
     
     return vals
 
@@ -138,6 +187,7 @@ def calculate_descriptors(residue_pot_df, antibody_name='', features = None):
     features_df.index = [antibody_name]
     return features_df
 
+
 def descriptor_pipeline(light_chain_seq, heavy_chain_seq, residue_pot_file, antibody_name='',features=None):
     """ generates the surface descriptors for an antibody given a residue_potential file
     Args:
@@ -149,7 +199,10 @@ def descriptor_pipeline(light_chain_seq, heavy_chain_seq, residue_pot_file, anti
         pd.DataFrame
     """
     residue_pot_df = pd.read_csv(residue_pot_file)
-    annotated_residue_pot_df= map_region_to_ab_seq(light_chain_seq,heavy_chain_seq, residue_pot_df)
+    sequences= {'L':light_chain_seq, 'H':heavy_chain_seq}
+
+    annotated_residue_pot_df= annotate_residues_with_fv_regions(sequences, residue_pot_df, scheme = 'kabat')
+    annotated_residue_pot_df.to_csv(residue_pot_file.with_suffix('.annotated.csv'))
     descriptors = calculate_descriptors(annotated_residue_pot_df, antibody_name, features) 
     return descriptors
 
