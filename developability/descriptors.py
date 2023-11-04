@@ -160,6 +160,12 @@ def region_potentials(residue_pot_df):
     vals.update( {f'{chain}C_APBS_{charge}': calculate_total_potential(all_regions, chain, charge) for
                   chain in chains for charge in charges})
     
+    vals.update({f'TOTAL_CDR_APBS_{charge}': calculate_total_potential(cdrs, chains, charge) 
+                  for charge in charges})   
+    
+    vals.update({f'TOTAL_FR_APBS_{charge}': calculate_total_potential(frameworks, chains, charge) 
+                  for charge in charges})
+    
     vals.update({f'TOTAL_APBS_{charge}': calculate_total_potential(all_regions, chains, charge) 
                   for charge in charges})
     
