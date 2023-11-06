@@ -142,7 +142,7 @@ def region_potentials(residue_pot_df):
         return df.loc[df.FV_region.isin(region) & df.FV_chain.isin(chain)]['total_pot'].sum()
             
     cdrs = ['CDR1','CDR2', 'CDR3']
-    frameworks = ['FR1','CDR2', 'CDR3']
+    frameworks = ['FR1','FR2', 'FR3', 'FR4']
     all_regions = cdrs + frameworks
     chains = ['H', 'L']
     
