@@ -5,6 +5,7 @@ from openmm.app import PDBFile
 from biopandas.pdb import PandasPdb
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO, Select
+from Bio.SeqUtils import seq3
 from abnumber import Chain
 
 from .utils import extract_sequence_from_pdb
@@ -270,3 +271,68 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
     pdb_io.save(str(output_pdb))
 
     return output_pdb
+
+
+########################################################################################################################################################################
+# Mutate proteins
+########################################################################################################################################################################
+
+
+def mutate_protein(pdb, mutations, output_path=None, output_filename=None, keep_ids=True, transform_mutants=True):
+    """Uses PDBFixer to mutate antibody, save the file
+
+    Args:
+        pdb (str|path): path to pdb file
+        mutations (dict): dict with keys for chain and values of list of mutations
+        output_filename (str, optional): name of file. Defaults to None.  
+        output_path (str|Path, optional):output path. Defaults to None.
+        keep_ids (bool, optional): whether to keep original chain ids and numbering. Defaults to True.
+        transform_mutants (bool, optional): If True, transform 1 letter code to 3 letter code. Defaults to True.
+
+    Returns:
+        _type_: _description_
+    """
+
+    fixer = PDBFixer(str(pdb))
+    for chain, muts in mutations.items(): 
+        if transform_mutants:
+            fixer.applyMutations(transform_mutant_tuples(muts), chain)
+        else:
+            fixer.applyMutations(muts, chain)
+    
+    if not output_filename: 
+        name = Path(pdb).name.split('.')[0]
+        for chain, muts in mutations.items(): 
+            if muts: 
+                muts = [''.join(str(c) for c in m) for m in muts]
+                name += '-' + chain + '-' + '-'.join(muts)
+        output_file_name = name + '.pdb'
+
+    if not output_path:
+        output_path = Path(pdb).parent
+    
+    output = output_path /output_file_name
+    PDBFile.writeFile(fixer.topology, fixer.positions, open(str(output), 'w'), keepIds = keep_ids)
+    return output
+
+
+def transform_mutant_tuple(mutant):
+    """Converts a tuple of 1 letter aa pos aa tuple into three letter aa. 
+    Args: 
+        mutant(tuple)
+    Returns: 
+        str: 
+    """
+
+    return f'{seq3(mutant[0]).upper()}-{int(mutant[1])}-{seq3(mutant[2]).upper()}'
+
+def transform_mutant_tuples(muts): 
+    """ Transforms multiple mutants. """
+    return [transform_mutant_tuple(mut) for mut in muts]
+
+def generate_mutations_dict(row, lc_length, hc_length):
+    mutations = {'L': [mutation for mutation in row['Vl mutations'] if mutation[1]<=lc_length],
+                 'H': [mutation for mutation in row['Vh mutations'] if mutation[1]<=hc_length]
+                 }
+    return mutations
+
