@@ -122,10 +122,26 @@ def determine_chain_type(seqs, scheme='kabat'):
 
 
 #### Viz
-def plot_correlogram(d, cmap='RdBu',title = None,  method = 'pearson', figsize = (11,9)):
+def plot_correlogram(d, cmap='RdBu',title = None,  method = 'pearson', figsize = (11,9), compute_corr=True, 
+                     annot=False):
+    """Plots a correlogram for a dataframe
+    Args: 
+        d(pd.DataFrame): dataframe
+        cmap(str): color map
+        title(str): title for plot
+        method(str): method for correlation
+        figsize(tuple): size of figure
+        compute_corr(bool): if True, compute correlation matrix
+        annot(bool): if True, annotate the cells
+    Returns:
+        ax(matplotlib.axes): axes for plot
+    """
 
-    # Compute the correlation matrix
-    corr = d.corr(method = method)
+    if compute_corr:
+        # Compute the correlation matrix
+        corr = d.corr(method = method)
+    else: 
+        corr = d
 
     # Generate a mask for the upper triangle
     mask = np.triu(np.ones_like(corr, dtype=bool))
@@ -135,7 +151,7 @@ def plot_correlogram(d, cmap='RdBu',title = None,  method = 'pearson', figsize =
 
     # Draw the heatmap with the mask and correct aspect ratio
     sns.heatmap(corr, mask=mask, cmap=cmap, center=0,
-                square=True, linewidths=.5, cbar_kws={"shrink": .5}, ax = ax)
+                square=True, linewidths=.5, cbar_kws={"shrink": .5}, ax = ax, annot=annot)
     
     if title: 
         ax.set(title = title)
