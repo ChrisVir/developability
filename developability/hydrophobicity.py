@@ -3,8 +3,19 @@ from pathlib import Path
 import numpy as np
 import faiss
 from developability.descriptors import map3to1
+from developability.input_output import read_pqr
 import developability
 from matplotlib import pyplot as plt
+
+
+def read_hydrophobicity_scales():
+    """Read hydrophobicity scales from csv file.
+    Args:
+        None
+    Returns:
+        pd.DataFrame: dataframe of hydrophobicity scales.
+    """
+    return pd.read_csv(Path(developability.__path__[0])/'hydrophobicity_scales.csv', index_col=0)
 
 
 def load_hydrophobicity_scale(scale='Eisenberg'): 
@@ -106,7 +117,7 @@ def aggregate_hydrophobicity_over_residues(pqr_df, atom_surface_df, radius=0.8, 
     Returns:
         pd.DataFrame: dataframe of vertices with weighted averages.
     """
-    hydrophobicities = map_hydrophobicity_scale_to_residues_in_pqr(pqr_df, scale='Eisenberg')
+    hydrophobicities = map_hydrophobicity_scale_to_residues_in_pqr(pqr_df, scale=scale)
     atom_hydrophobicities = atom_surface_df.merge(right = hydrophobicities[['Atom_number', 'Hydrophobicity']], left_on='atom', right_on='Atom_number')
     vertex_hydrophobicities = compute_feature_averages(atom_hydrophobicities, radius=radius, feature='Hydrophobicity', weight=weight)
     
@@ -144,7 +155,13 @@ class HydrophobicSurface:
     """
 
     def __init__(self, pqr, atom_surface, radius=0.8, weight='uniform', scale='Eisenberg', agg_func=np.mean): 
+        
+        if isinstance(pqr, str) or isinstance(pqr, Path): 
+            pqr = read_pqr(pqr)
         self.pqr = pqr
+        
+        if isinstance(atom_surface, str) or isinstance(atom_surface, Path):
+            atom_surface = pd.read_csv(atom_surface)
         self.atom_surface = atom_surface
         self.radius = radius
         self.weight = weight
@@ -152,10 +169,8 @@ class HydrophobicSurface:
         self.agg_func = agg_func
         hydrophobicities = aggregate_hydrophobicity_over_residues(pqr, atom_surface, radius=radius, weight=weight, scale=scale, agg_func=agg_func)
         self.atom_hydrophobicities, self.vertex_hydrophobicities, self.residue_hydrophobicities = hydrophobicities
-        self.vertex_hydrophobicities = self.vertex_hydrophobicities.merge(right=self.pqr[['Atom_number', 'Residue_number', 'Residue_name']], left_on='atom', right_on='Atom_number')
-        
-        self.residue_hydrophobicities = self.residue_hydrophobicities.merge(right=self.pqr[['Atom_number', 'Residue_number', 'Residue_name']], left_on='Residue_number', right_on='Residue_number')
-        self.residue_hydrophobicities = self.residue_hydrophobicities.drop(columns=['Atom_number'])
+        #self.vertex_hydrophobicities = self.vertex_hydrophobicities.merge(right=self.pqr[['Atom_number', 'Residue_number', 'Residue_name']], left_on='atom', right_on='Atom_number')
+        #self.residue_hydrophobicities = self.residue_hydrophobicities.merge(right=self.pqr[['Atom_number', 'Residue_number', 'Residue_name']], left_on='Residue_number', right_on='Residue_number')
 
     def __repr__(self): 
         return f'HydropbicSurface(pqr={self.pqr}, atom_surface={self.atom_surface}, radius={self.radius}, weight={self.weight}, scale={self.scale}, agg_func={self.agg_func})'
@@ -219,3 +234,70 @@ class HydrophobicSurface:
             fig, ax = plt.subplots()
         ax.scatter(self.vertices['x'], self.vertices['y'], c=self.vertices[feature], cmap=cmap, vmin=vmin, vmax=vmax, **kwargs)
         return ax
+
+
+def region_hydrophobicities(residue_hydrophobicity_df, hydrophobicity_col= 'Hydrophobicity'):
+    """ Calculates the potentials for regions
+    TODO: refactor this function to make cleaner. 
+    Args: 
+        residue_hydrophobicity_df(pd.DataFrame): annotated DataFrame with the residue hydrophobicities 
+        hydrophobicity_col(str): name of column with hydrophobicity values
+    Returns: 
+        vals(dict): dict with values
+    """
+    
+    def calculate_hydrophobicity(region, chain, hydrophobicity='pos'): 
+        """ Calculates the hydrophobicity
+        Args: 
+            region(str|list[str]): the region to calculate
+            chain(str|list[str]): the chain to calculate
+            hydrophobicity(str): the hydrophobicity to calculate (positive, negative, net)
+        Returns: 
+            float: the potential for the region
+        """
+
+        if isinstance(region, str):
+            region = [region]   
+
+        if isinstance(chain, str):  
+            chain = [chain]
+
+        if hydrophobicity=='pos':
+            df = residue_hydrophobicity_df.loc[residue_hydrophobicity_df[hydrophobicity_col]>0]
+        elif hydrophobicity=='neg':
+            df = residue_hydrophobicity_df.loc[residue_hydrophobicity_df[hydrophobicity_col]<0]
+        elif hydrophobicity=='net':
+            df = residue_hydrophobicity_df
+        else:
+            raise ValueError('hydrophobicity must be pos, neg or net')    
+        return df.loc[df.FV_region.isin(region) & df.FV_chain.isin(chain)][hydrophobicity_col].sum()
+            
+    cdrs = ['CDR1','CDR2', 'CDR3']
+    frameworks = ['FR1','FR2', 'FR3', 'FR4']
+    all_regions = cdrs + frameworks
+    chains = ['H', 'L']
+    
+    hydrophobicities = ['pos', 'neg', 'net']
+
+    vals = {f'{chain}{region}_HYDRO_{hydrophobicity_sign}': calculate_hydrophobicity(region, chain, hydrophobicity_sign) for 
+            chain in chains for region in all_regions for hydrophobicity_sign in hydrophobicities}
+    
+    vals.update( {f'{chain}CDR_HYDRO_{hydrophobicity}': calculate_hydrophobicity(cdrs, chain, hydrophobicity) for
+                  chain in chains for hydrophobicity in hydrophobicities})
+    
+    vals.update( {f'{chain}FR_HYDRO_{hydrophobicity}': calculate_hydrophobicity(frameworks, chain, hydrophobicity) for
+                  chain in chains for hydrophobicity in hydrophobicities})
+
+    vals.update( {f'{chain}C_HYDRO_{hydrophobicity}': calculate_hydrophobicity(all_regions, chain, hydrophobicity) for
+                  chain in chains for hydrophobicity in hydrophobicities})
+    
+    vals.update({f'TOTAL_CDR_HYDRO_{hydrophobicity}': calculate_hydrophobicity(cdrs, chains, hydrophobicity) 
+                  for hydrophobicity in hydrophobicities})   
+    
+    vals.update({f'TOTAL_FR_HYDRO_{hydrophobicity}': calculate_hydrophobicity(frameworks, chains, hydrophobicity) 
+                  for hydrophobicity in hydrophobicities})
+    
+    vals.update({f'TOTAL_HYDRO_{hydrophobicity}': calculate_hydrophobicity(all_regions, chains, hydrophobicity) 
+                  for hydrophobicity in hydrophobicities})
+    
+    return vals

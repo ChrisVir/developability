@@ -123,7 +123,7 @@ def determine_chain_type(seqs, scheme='kabat'):
 
 #### Viz
 def plot_correlogram(d, cmap='RdBu',title = None,  method = 'pearson', figsize = (11,9), compute_corr=True, 
-                     annot=False):
+                     annot=False, annot_kws=None, vmin=None, vmax=None, linewidths=0.25, tick_label_size=None):
     """Plots a correlogram for a dataframe
     Args: 
         d(pd.DataFrame): dataframe
@@ -133,6 +133,11 @@ def plot_correlogram(d, cmap='RdBu',title = None,  method = 'pearson', figsize =
         figsize(tuple): size of figure
         compute_corr(bool): if True, compute correlation matrix
         annot(bool): if True, annotate the cells
+        annot_kws(dict): dict to control annotation. 
+        vmin(float): min of color bar
+        vmax(float): max of color bar
+        linewidths(float): line widths for grid lines. 
+        tick_label_size(float): size for both tick labels. 
     Returns:
         ax(matplotlib.axes): axes for plot
     """
@@ -150,8 +155,13 @@ def plot_correlogram(d, cmap='RdBu',title = None,  method = 'pearson', figsize =
     f, ax = plt.subplots(figsize=figsize)
 
     # Draw the heatmap with the mask and correct aspect ratio
-    sns.heatmap(corr, mask=mask, cmap=cmap, center=0,
-                square=True, linewidths=.5, cbar_kws={"shrink": .5}, ax = ax, annot=annot)
+    sns.heatmap(corr, mask=mask, cmap=cmap, center=0, square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, 
+                ax = ax, annot=annot, annot_kws=annot_kws, vmin=vmin, vmax = vmax)
+    
+    if tick_label_size: 
+        ax.tick_params(axis = 'both', which = 'major', labelsize = tick_label_size)
     
     if title: 
         ax.set(title = title)
+
+    return ax 
