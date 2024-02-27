@@ -278,7 +278,7 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
 ########################################################################################################################################################################
 
 
-def mutate_protein(pdb, mutations, output_path=None, output_filename=None, keep_ids=True, transform_mutants=True):
+def mutate_protein(pdb, mutations, output_path=None, output_filename=None, keep_ids=True, transform_mutants=True, pH=7.0):
     """Uses PDBFixer to mutate antibody, save the file
 
     Args:
@@ -288,6 +288,7 @@ def mutate_protein(pdb, mutations, output_path=None, output_filename=None, keep_
         output_path (str|Path, optional):output path. Defaults to None.
         keep_ids (bool, optional): whether to keep original chain ids and numbering. Defaults to True.
         transform_mutants (bool, optional): If True, transform 1 letter code to 3 letter code. Defaults to True.
+        pH (float, optional): pH for adding hydrogens. Defaults to 7.0.
 
     Returns:
         _type_: _description_
@@ -300,18 +301,24 @@ def mutate_protein(pdb, mutations, output_path=None, output_filename=None, keep_
         else:
             fixer.applyMutations(muts, chain)
     
+    # this add the extra atoms to the topology. 
+    fixer.findMissingResidues()     
+    fixer.findMissingAtoms()
+    fixer.addMissingAtoms()        
+    fixer.addMissingHydrogens(pH)
+
     if not output_filename: 
         name = Path(pdb).name.split('.')[0]
         for chain, muts in mutations.items(): 
             if muts: 
                 muts = [''.join(str(c) for c in m) for m in muts]
                 name += '-' + chain + '-' + '-'.join(muts)
-        output_file_name = name + '.pdb'
+        output_filename = name + '.pdb'
 
     if not output_path:
         output_path = Path(pdb).parent
     
-    output = output_path /output_file_name
+    output = output_path /output_filename
     PDBFile.writeFile(fixer.topology, fixer.positions, open(str(output), 'w'), keepIds = keep_ids)
     return output
 

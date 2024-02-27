@@ -116,5 +116,12 @@ def read_text(file):
     return Path(file).read_text()
 
 
+def read_potential_file( potential_file): 
+    """read in a file with surface vertices and potential"""
+    df = pd.read_csv(potential_file, header =None)
+    df.columns = ['x', 'y', 'z', 'potential']
+    return df
+
+
 if __name__ == '__main__': 
     pass
