@@ -6,9 +6,9 @@ from biopandas.pdb import PandasPdb
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO, Select
 from Bio.SeqUtils import seq3
-from abnumber import Chain
+from abnumber import Chain, ChainParseError
 
-from .utils import extract_sequence_from_pdb
+from .utils import extract_sequence_from_pdb, determine_chain_type
 
 def remove_chains(fixer, chains_to_keep): 
     """Uses fixer.remove_chains to remove chains not present in chain_to_keep. Keeps the first occurence of each chain. 
@@ -194,7 +194,9 @@ def save_pdb_with_select_chains(input_pdb, chains, output_path=None):
     
     io = PDBIO()
     io.set_structure(struct)
+    fname = output_path/output_name
     io.save(str(output_path/output_name),ChainSelect(chains))
+    return fname
 
 
 def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'): 
@@ -211,16 +213,19 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
     
     # dicts to hold info. 
     fv_sequences = {}
-    fv_chains = {}
-
+    fv_chains ={}
+    
     for name, seq in seqs.items(): 
-        chain = Chain(seq, scheme = scheme)
-        fv_sequences[name] = chain.seq
-        if chain.is_heavy_chain(): 
-            fv_chains[name]="H"
-        else: 
-            fv_chains[name]="L"
-
+        try:
+            chain = Chain(seq, scheme = scheme)
+            fv_sequences[name] = chain.seq
+            if chain.is_heavy_chain(): 
+                fv_chains[name]="H"
+            else: 
+                fv_chains[name]="L"
+        except ChainParseError:
+            pass
+    
     pdb_name = Path(pdb).name.split('.')[0]
     parser = PDBParser()
     struct= parser.get_structure(pdb_name,pdb)

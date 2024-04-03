@@ -6,7 +6,7 @@ from Bio.PDB.PDBIO import PDBIO
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
-from abnumber import Chain
+from abnumber import Chain, ChainParseError
 from .descriptors import map3to1
 
 
@@ -110,12 +110,15 @@ def determine_chain_type(seqs, scheme='kabat'):
     chains = {}
     
     for seq in seqs.values(): 
-        chain = Chain(seq,scheme )
-        if chain.is_heavy_chain(): 
-            chains.setdefault('H', seq)
-        elif chain.is_light_chain(): 
-            chains.setdefault('L', seq)
-        else: 
+        try:
+            chain = Chain(seq,scheme )
+            if chain.is_heavy_chain(): 
+                chains.setdefault('H', seq)
+            elif chain.is_light_chain(): 
+                chains.setdefault('L', seq)
+            else: 
+                pass
+        except ChainParseError:
             pass
     
     return chains['L'], chains['H']
