@@ -107,7 +107,7 @@ class Mutator:
 
     def generate_mutants(self):
         """ generate all the mutants"""
-
+        print('Generating mutants')
         _ = [self.mutate_protein(idx) for idx in range(len(self.mutation_df))]
 
     def generate_mutant(self, idx):
