@@ -7,6 +7,7 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 from abnumber import Chain, ChainParseError
+
 from .descriptors import map3to1
 
 
