@@ -26,7 +26,7 @@ def parse_mutant_string(mutant_string):
 
 
 def convert_mutant_tuples_to_strings(mutant_tuples):
-    """Converts a list of mutant tuples to a list of strings in AA-pos-AA 
+    """Converts a list of mutant tuples to a list of strings in AA-pos-AA
        format
     Args:
         mutant_tuples(list[tuple]): list of tuples with aa1, pos, aa2
@@ -81,7 +81,7 @@ class Mutator:
             extract_FV_chains(bool): if True, create a PDB with FV only
             ph(float): pH for the mutations
 
-        NOTE: I assmue that the mutations are in a comma delimited string 
+        NOTE: I assmue that the mutations are in a comma delimited string
         with parent-pos-mutation format. e.g  G25Y. Glycine at 25 to lysine.
         """
 
