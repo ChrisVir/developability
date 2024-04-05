@@ -31,4 +31,4 @@ def test_Mutator():
 if __name__ == '__main__':
     test_generate_dict_of_mutations()
     test_Mutator()
-
+    print('All tests passed!')

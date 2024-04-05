@@ -34,7 +34,8 @@ def remove_chains(fixer, chains_to_keep):
 
 def fix_antibody(antibody_file, chains_to_keep=[], output_file_name=None,
                  output_path=None, keep_ids=False,
-                 fix_internal_residues_only=True):
+                 fix_internal_residues_only=True,
+                 save_pdb=True):
     """Uses PDB fixer to fix antibody
     Args:
         antibody_file(str|Path): file path
@@ -46,6 +47,7 @@ def fix_antibody(antibody_file, chains_to_keep=[], output_file_name=None,
         fix_internal_residues_only(bool, optional): If true, fix only
                                             internal residues.
                                             Defaults to True.
+        save_pdb(bool, optional): If True, save the pdb. Defaults to True.
 
     Returns:
         PDBFixer: the fixer object.
@@ -74,16 +76,16 @@ def fix_antibody(antibody_file, chains_to_keep=[], output_file_name=None,
     fixer.findMissingAtoms()
     fixer.addMissingAtoms()
 
-    # save
-    if not output_file_name:
-        output_file_name = antibody_file.name
+    if save_pdb:
+        if not output_file_name:
+            output_file_name = antibody_file.name
 
-    if not output_path:
-        output_path = antibody_file.parent
+        if not output_path:
+            output_path = antibody_file.parent
 
-    output = str(output_path / output_file_name)
-    PDBFile.writeFile(fixer.topology, fixer.positions,
-                      open(output, 'w'), keepIds=keep_ids)
+        output = str(output_path / output_file_name)
+        PDBFile.writeFile(fixer.topology, fixer.positions,
+                          open(output, 'w'), keepIds=keep_ids)
     return fixer
 
 
@@ -285,6 +287,32 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
     pdb_io.save(str(output_pdb))
 
     return output_pdb
+
+
+def get_fv_chains(pdb, scheme='kabat'):
+    """Determines which chains are the fv chains in the pdb.
+
+    Args:
+        pdb (str|Path): path to pdb file
+    Returns:
+        list[str]: list of chain ids.
+    """
+    seqs = extract_sequence_from_pdb(pdb)
+    fv_chain_names = {}
+    fv_seqs = {}
+    for name, seq in seqs.items():
+        try:
+            chain = Chain(seq, scheme=scheme)
+            if chain.is_heavy_chain():
+                fv_seqs['heavy'] = chain.seq
+                fv_chain_names['heavy'] = name
+            elif chain.is_light_chain():
+                fv_seqs['light'] = chain.seq
+                fv_chain_names['light'] = name
+
+        except ChainParseError:
+            pass
+    return fv_chain_names, fv_seqs
 
 
 ##############################################################################

@@ -1,6 +1,9 @@
+import pandas as pd
+from pathlib import Path
 from Bio.SeqUtils import seq3
-from .pdb_tools import (mutate_protein, extract_sequence_from_pdb,
-                        fix_antibody, correct_oxt, extract_fv_from_pdb)
+
+from .pdb_tools import (mutate_protein, fix_antibody, get_fv_chains,
+                        correct_oxt, extract_fv_from_pdb)
 
 
 def parse_mutant_string(mutant_string):
@@ -11,9 +14,26 @@ def parse_mutant_string(mutant_string):
     Returns:
         (list[tuples])
     """
-    mutants = [m.strip() for m in mutant_string.split(',')]
-    return [[seq3(m[0]).upper(), int(m[1:-1]), seq3(m[-1]).upper()]
-            for m in mutants]
+
+    mutants = []
+    for m in mutant_string.split(','):
+        m = m.strip()
+        aa1 = seq3(m[0]).upper()
+        pos = int(m[1:-1])
+        aa2 = seq3(m[-1]).upper()
+        mutants.append([aa1, pos, aa2])
+    return mutants
+
+
+def convert_mutant_tuples_to_strings(mutant_tuples):
+    """Converts a list of mutant tuples to a list of strings in AA-pos-AA 
+       format
+    Args:
+        mutant_tuples(list[tuple]): list of tuples with aa1, pos, aa2
+    Returns:
+        (str)
+    """
+    return [f'{m[0]}-{m[1]}-{m[2]}' for m in mutant_tuples]
 
 
 def generate_dict_of_mutations(light_chain_mutations, heavy_chain_mutations,
@@ -46,9 +66,8 @@ class Mutator:
 
     def __init__(self, parent_pdb, mutation_df, light_chain_mutations='VL',
                  heavy_chain_mutations='VH', filename=None, output_path=None,
-                 light_chain_id='L', heavy_chain_id='H',
                  extract_FV_chains=True, should_corrext_oxt=True,
-                 ph=7
+                 pH=7
                  ):
         """Class to handle mutations with PDBFixer
         Args:
@@ -59,8 +78,6 @@ class Mutator:
             heavy_chain_mutations(str): column with hc mutations, default to VH
             name(str|None): column with output names, if None, from parent_pdb.
             output_path(str|Path|None): Path for the mutants. If None, created.
-            light_chain_id(str): name of the light chain
-            heavy_chain_id(str): name of the heavy chain
             extract_FV_chains(bool): if True, create a PDB with FV only
             ph(float): pH for the mutations
 
@@ -70,6 +87,17 @@ class Mutator:
 
         self.parent_pdb = parent_pdb
         self.fv_only_pdb = parent_pdb.parent / f'{parent_pdb.stem}_fv_only.pdb'
+
+        self.fv_names, self.fv_seqs = get_fv_chains(parent_pdb)
+        self.lc_length = len(self.fv_seqs['light'])
+        self.hc_length = len(self.fv_seqs['heavy'])
+        self.light_chain_id = self.fv_names['light']
+        self.heavy_chain_id = self.fv_names['heavy']
+        self.chains = [self.light_chain_id, self.heavy_chain_id]
+
+        if isinstance(mutation_df, str) or isinstance(mutation_df, Path):
+            mutation_df = pd.read_csv(mutation_df)
+
         self.mutation_df = mutation_df
         self.light_chain_mutations = light_chain_mutations
         self.heavy_chain_mutations = heavy_chain_mutations
@@ -80,51 +108,63 @@ class Mutator:
             prefix = self.parent_pdb.name.replace('.pdb', '')
             self.output_path = self.parent_pdb.parent/f'{prefix}_output'
 
-        self.light_chain_id = 'L'
-        self.heavy_chain_id = 'H'
-        self.chains = [light_chain_id, heavy_chain_id]
-        self.should_correct_oxt = should_corrext_oxt
-        self.lc_length = None
-        self.hc_length = None
-        self.ph = ph
+        if not self.output_path.exists():
+            self.output_path.mkdir()
 
-    def __preprocess_parent_antibody__(self):
+        self.should_correct_oxt = should_corrext_oxt
+        self.extract_FV_chains = extract_FV_chains
+        self.pH = pH
+
+    def preprocess_parent_antibody(self):
         """Preprocess_parent_antibody. It fixes the pdb, removes oxt
            if needed and extracts the FV region"""
 
         print('Fixing antibody.')
-        fixer = fix_antibody(self.parent_pdb, self.chains, self.fv_only_pdb)
+        fixer = fix_antibody(self.parent_pdb, chains_to_keep=self.chains,
+                             output_file_name=self.fv_only_pdb, save_pdb=False)
 
-        if self.correct_oxt:
+        if self.should_correct_oxt:
             print('Correct Oxt residues. ')
             correct_oxt(fixer, self.fv_only_pdb)
 
         print('Removing FV domain from Antibody')
-        extract_fv_from_pdb(self.fv_only_pdb, self.fv_only_pdb)
-        chains = extract_sequence_from_pdb(self.fv_only_pdb)
-        self.lc_length = len(chains['L'])
-        self.hc_length = len(chains['H'])
+        if self.extract_FV_chains:
+            extract_fv_from_pdb(self.fv_only_pdb, self.fv_only_pdb)
 
     def generate_mutants(self):
         """ generate all the mutants"""
         print('Generating mutants')
-        _ = [self.mutate_protein(idx) for idx in range(len(self.mutation_df))]
+        n_mutants = len(self.mutation_df)
+        filenames = [self.generate_mutant(idx) for idx in range(n_mutants)]
+        return filenames
 
     def generate_mutant(self, idx):
         """generate the mutant protein at the idx"""
 
-        if self.filename is not None:
-            filename = self.mutation_df['filename'].iloc[idx]
-        else:
-            filename = None
-
         lc_mutations = self.mutation_df[self.light_chain_mutations].iloc[idx]
         hc_mutations = self.mutation_df[self.heavy_chain_mutations].iloc[idx]
+
+        if self.filename:
+            filename = self.mutation_df['filename'].iloc[idx]
+        else:
+            stem = self.fv_only_pdb.stem
+            lc_mutations_str = lc_mutations.replace(', ', '-')
+            hc_mutations_str = hc_mutations.replace(', ', '-')
+            filename = f'{stem}_L_{lc_mutations_str}_H_{hc_mutations_str}.pdb'
 
         mutations = generate_dict_of_mutations(lc_mutations, hc_mutations,
                                                lc_length=self.lc_length,
                                                hc_length=self.hc_length)
 
-        return mutate_protein(self.parent_pdb, mutations,
-                              output_path=self.output_path,
-                              filename=filename, ph=self.ph)
+        mutations = {k: convert_mutant_tuples_to_strings(v) for k, v in
+                     mutations.items()}
+
+        mutate_protein(self.fv_only_pdb, mutations,
+                       output_path=self.output_path,
+                       output_filename=filename,
+                       pH=self.pH, transform_mutants=False)
+
+        return filename
+
+    def __repr__(self):
+        return f'Mutator for {self.parent_pdb}'
