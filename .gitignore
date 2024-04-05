@@ -110,7 +110,8 @@ ENV/
 *.log
 *.xyz
 *.dx
-*.pdb
+developability/*.pdb
+notebooks/*.pdb
 *.mc
 *.csv
 *.off
@@ -122,3 +123,6 @@ ENV/
 #other
 *.DS_Store
 .DS_Store
+
+# Include
+! test/data/*.pdb
