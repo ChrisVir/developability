@@ -42,7 +42,7 @@ def fix_antibody(antibody_file, chains_to_keep=[], output_file_name=None,
         chains_to_keep(list[str]): list of Fab chains to keep
         output_file_name (str): name of file. Defaults to None.
         output_path (str|Path): dir for output. Defaults to None.
-        keep_ids(bool, optional): If true, keep the ids and 
+        keep_ids(bool, optional): If true, keep the ids and
                                    numbering from input pdb. Defaults to False.
         fix_internal_residues_only(bool, optional): If true, fix only
                                             internal residues.
@@ -216,7 +216,7 @@ def extract_fv_from_pdb(pdb, output_pdb=None, scheme='kabat'):
     Args:
         pdb (str|path): path to pdb file with ab
         output_pdb (str|path): path to output
-    Returns: 
+    Returns:
         Path: to new object
     """
 
