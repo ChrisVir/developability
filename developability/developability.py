@@ -15,7 +15,7 @@ def mutate_antibody(pdb, mutations, input_dir, output_dir):
     if input_dir:
         pdb = Path(input_dir) / pdb
         mutations = Path(input_dir) / mutations
-    else: 
+    else:
         pdb = Path(pdb)
         mutations = Path(mutations)
 
