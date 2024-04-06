@@ -12,7 +12,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = ['pandas', 'openmm', 'abnumber']
 
-test_requirements = [ ]
+test_requirements = []
 
 setup(
     author="Chris Rivera",
@@ -32,6 +32,11 @@ setup(
     ],
     description="A project for mAb developability",
     install_requires=requirements,
+    entry_points={
+        'console_scripts': [
+            'mutate_antibody = developability.developability:mutate_antibody',
+                          ]
+                          },
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='developability',

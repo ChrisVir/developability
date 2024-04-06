@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 from Bio.SeqUtils import seq3
 
+from developability.developability import mutate_antibody
 from developability.mutator import (generate_dict_of_mutations, Mutator,
                                     parse_mutant_string)
 
@@ -11,6 +12,7 @@ from developability.pdb_tools import (extract_sequence_from_pdb, get_fv_chains)
 
 import warnings
 warnings.filterwarnings("ignore")
+
 
 data_path = Path(__file__).parent / 'data'
 
@@ -32,7 +34,6 @@ def test_generate_dict_of_mutations():
 
 
 def test_Mutator():
-
     pdb = data_path / 'abciximab_6v4p.pdb'
     mutant_df = pd.DataFrame(dict(VH=['V2Q, Q3L, L4V'], VL=['I2Q, V3L']))
     mutator = Mutator(pdb, mutant_df)
@@ -94,6 +95,20 @@ def test_Mutator_generate_mutants():
         mutator.fv_only_pdb.unlink()
         for f in file_paths:
             f.unlink()
+
+
+def test_mutate_antibody_cli():
+    pdb = data_path / 'abciximab_6v4p.pdb'
+    mutations = data_path / 'mutations.csv'
+
+    mutant_df = pd.DataFrame(dict(VH=['V2Q, Q3L, L4V', 'V2Q, Q3L, L4K'],
+                                  VL=['I2Q, V3L', 'I2Q, V3K']))
+
+    mutant_df.to_csv(mutations, index=False)
+    file_paths = mutate_antibody(pdb, mutations)
+    for f in file_paths:
+        assert f.exists()
+        f.unlink()
 
 
 if __name__ == '__main__':
