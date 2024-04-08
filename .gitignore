@@ -125,4 +125,4 @@ notebooks/*.pdb
 .DS_Store
 
 # Include
-! test/data/*.pdb
+!tests/data/*

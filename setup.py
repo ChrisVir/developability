@@ -14,6 +14,9 @@ requirements = ['pandas', 'openmm', 'abnumber']
 
 test_requirements = []
 
+mutate1 = 'developability.developability:mutate_antibody'
+mutate_many = 'developability.developability:mutate_multiple_antibodies'
+
 setup(
     author="Chris Rivera",
     author_email='crivera@vir.bio',
@@ -34,7 +37,8 @@ setup(
     install_requires=requirements,
     entry_points={
         'console_scripts': [
-            'mutate_antibody = developability.developability:mutate_antibody',
+            f'mutate_antibody = {mutate1}',
+            f'mutate_multiple_antibodies ={mutate_many}'
                           ]
                           },
     long_description=readme + '\n\n' + history,
