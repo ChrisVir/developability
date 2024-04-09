@@ -150,7 +150,8 @@ class APBS(object):
         if not output_path:
             output_path = self.input_pdb.parent
 
-        self.output_path = Path(output_path)
+        output_path = Path(output_path)
+        self.output_path = output_path
 
         if not self.output_path.exists():
             self.output_path.mkdir()
@@ -195,4 +196,3 @@ class APBS(object):
 
 if __name__ == '__main__':
     pass
-   
