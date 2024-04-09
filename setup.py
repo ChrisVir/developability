@@ -16,6 +16,7 @@ test_requirements = []
 
 mutate1 = 'developability.developability:mutate_antibody'
 mutate_many = 'developability.developability:mutate_multiple_antibodies'
+compute_electrostatics = 'developability.developability:compute_electrostatics'
 
 setup(
     author="Chris Rivera",
@@ -38,7 +39,8 @@ setup(
     entry_points={
         'console_scripts': [
             f'mutate_antibody = {mutate1}',
-            f'mutate_multiple_antibodies ={mutate_many}'
+            f'mutate_multiple_antibodies = {mutate_many}'
+            f'compute_electrostatics = {compute_electrostatics}'
                           ]
                           },
     long_description=readme + '\n\n' + history,

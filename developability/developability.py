@@ -2,6 +2,7 @@
 import click
 from pathlib import Path
 from developability.mutator import Mutator
+from developability.electrostatics import APBS
 
 
 @click.command()
@@ -30,14 +31,22 @@ def mutate_antibody(pdb, mutations, input_dir, output_dir):
 
 @click.command()
 @click.argument('pdb_dir')
-@click.argument('mutations_dir')
-@click.option('--output_dir', default=None, help='directory for output files')
-def mutate_multiple_antibodies(pdb_dir, mutations_dir, output_dir):
+@click.argument('mutations_path')
+@click.option('--output_path', default=None, help='directory for output files')
+def mutate_multiple_antibodies(pdb_dir, mutations_path, output_path):
     """Mutate multiple antibodies."""
     for pdb in Path(pdb_dir).glob('*.pdb'):
         pdb_id = pdb.stem
-        mutations = Path(mutations_dir) / f'{pdb_id}_mutations.csv'
-        mutate_antibody(pdb, mutations, output_dir=output_dir)
+        mutations = Path(mutations_path) / f'{pdb_id}_mutations.csv'
+        mutate_antibody(pdb, mutations, output_dir=output_path)
+
+
+@click.command()
+@click.argument('input_pdb')
+@click.optionan('--output_path', default=None, help='directory for outputs')
+def compute_electrostatics(input_pdb, output_path):
+    apbs = APBS(input_pdb, output_path)
+    return apbs.calculate_potential()
 
 
 if __name__ == '__main__':
