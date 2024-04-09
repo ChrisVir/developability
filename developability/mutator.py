@@ -105,8 +105,8 @@ class Mutator:
         self.filename = filename
 
         if output_path is None:
-            prefix = self.parent_pdb.name.replace('.pdb', '')
-            self.output_path = self.parent_pdb.parent/f'{prefix}_output'
+            # prefix = self.parent_pdb.name.replace('.pdb', '')
+            self.output_path = self.parent_pdb.parent/'mutations'
         else:
             self.output_path = output_path
 
