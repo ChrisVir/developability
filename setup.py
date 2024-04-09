@@ -39,7 +39,7 @@ setup(
     entry_points={
         'console_scripts': [
             f'mutate_antibody = {mutate1}',
-            f'mutate_multiple_antibodies = {mutate_many}'
+            f'mutate_multiple_antibodies = {mutate_many}',
             f'compute_electrostatics = {compute_electrostatics}'
                           ]
                           },
