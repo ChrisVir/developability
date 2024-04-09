@@ -43,7 +43,7 @@ def mutate_multiple_antibodies(pdb_dir, mutations_path, output_path):
 
 @click.command()
 @click.argument('input_pdb')
-@click.option('--output_path', default=None, help='directory for outputs')
+@click.option('--output_path', default='output', help='directory for outputs')
 def compute_electrostatics(input_pdb, output_path):
     apbs = APBS(input_pdb, output_path)
     return apbs.calculate_potential()
