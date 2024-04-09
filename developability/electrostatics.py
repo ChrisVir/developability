@@ -152,8 +152,8 @@ class APBS(object):
 
         self.output_path = Path(output_path)
 
-        if not output_path.exists():
-            output_path.mkdir()
+        if not self.output_path.exists():
+            self.output_path.mkdir()
 
         # set the names of intermediate files based on the input pqdb
         self.pqr_file = output_path / self.input_pdb.with_suffix('.pqr').name
