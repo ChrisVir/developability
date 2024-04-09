@@ -21,6 +21,7 @@ def mutate_antibody(pdb, mutations, input_dir, output_dir):
 
     if output_dir:
         output_dir = Path(output_dir)
+        output_dir.mkdir(exist_ok=True)
 
     mutator = Mutator(pdb, mutations, output_path=output_dir)
     mutator.preprocess_parent_antibody()

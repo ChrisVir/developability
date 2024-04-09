@@ -107,6 +107,8 @@ class Mutator:
         if output_path is None:
             prefix = self.parent_pdb.name.replace('.pdb', '')
             self.output_path = self.parent_pdb.parent/f'{prefix}_output'
+        else:
+            self.output_path = output_path
 
         if not self.output_path.exists():
             self.output_path.mkdir()
