@@ -14,9 +14,11 @@ requirements = ['pandas', 'openmm', 'abnumber']
 
 test_requirements = []
 
-mutate1 = 'developability.developability:mutate_antibody'
-mutate_many = 'developability.developability:mutate_multiple_antibodies'
-compute_electrostatics = 'developability.developability:compute_electrostatics'
+entry_point = 'developability.developability'
+mutate1 = f'{entry_point}:mutate_antibody'
+mutate_many = f'{entry_point}:mutate_multiple_antibodies'
+compute_electrostatics = f'{entry_point}:compute_electrostatics'
+calculate_surface_potential = f'{entry_point}:calculate_surface_potential'
 
 setup(
     author="Chris Rivera",
@@ -40,7 +42,8 @@ setup(
         'console_scripts': [
             f'mutate_antibody = {mutate1}',
             f'mutate_multiple_antibodies = {mutate_many}',
-            f'compute_electrostatics = {compute_electrostatics}'
+            f'compute_electrostatics = {compute_electrostatics}',
+            f'calculate_surface_potential = {calculate_surface_potential}'
                           ]
                           },
     long_description=readme + '\n\n' + history,

@@ -3,6 +3,7 @@ import click
 from pathlib import Path
 from developability.mutator import Mutator
 from developability.electrostatics import APBS
+from developability.surface import SurfacePotential
 
 
 @click.command()
@@ -29,7 +30,7 @@ def mutate_antibody(pdb, mutations, input_dir, output_dir):
     mutator.generate_mutants()
 
 
-@click.command()
+@click.command(help='Computes Electrostatics with APBS')
 @click.argument('pdb_dir')
 @click.argument('mutations_path')
 @click.option('--output_path', default=None, help='directory for output files')
@@ -47,6 +48,17 @@ def mutate_multiple_antibodies(pdb_dir, mutations_path, output_path):
 def compute_electrostatics(input_pdb, output_path):
     apbs = APBS(input_pdb, output_path)
     return apbs.calculate_potential()
+
+
+@click.command()
+@click.argument('input_pqr')
+@click.argument('input_dx')
+@click.option('--output_dir', default=None, help='directory for outputs')
+def calculate_surface_potential(input_pqr, input_dx, output_dir=None):
+    """Calculates a surface mesh using Nanoshaper and calculates potential 
+    at surface"""
+    sp = SurfacePotential(input_pqr, input_dx, output_dir)
+    return sp.calculate_surface_potential()
 
 
 if __name__ == '__main__':
