@@ -1,9 +1,13 @@
 """Main module."""
 import click
+import pandas as pd
+
 from pathlib import Path
 from developability.mutator import Mutator
 from developability.electrostatics import APBS
 from developability.surface import SurfacePotential
+from developability.pdb_tools import extract_sequence_from_pdb
+from developability.descriptors import descriptor_pipeline
 
 
 @click.command()
@@ -55,10 +59,40 @@ def compute_electrostatics(input_pdb, output_path):
 @click.argument('input_dx')
 @click.option('--output_dir', default=None, help='directory for outputs')
 def calculate_surface_potential(input_pqr, input_dx, output_dir=None):
-    """Calculates a surface mesh using Nanoshaper and calculates potential 
+    """Calculates a surface mesh using Nanoshaper and calculates potential
     at surface"""
     sp = SurfacePotential(input_pqr, input_dx, output_dir, multivalue_path="")
     return sp.calculate_surface_potential()
+
+
+@click.command()
+@click.argument('residue_potential_file')
+@click.argument('antibody_pdb')
+@click.option('--name', default=None, help='name for the output')
+def calculate_electrostatic_features(residue_potential_file, antibody_pdb,
+                                     name=None):
+    """Uses residue potential to calculate electrostatic features for model
+    Args:
+        residue_potential_file(str|path): path to file with residue potential
+        antibody_pdb(str|Path): File for antibody (only FV)
+        name(str|optional):
+    """
+
+    seqs = extract_sequence_from_pdb(antibody_pdb)
+    light_chain_seq = seqs['L']
+    heavy_chain_seq = seqs['H']
+
+    if not name:
+        name = Path(antibody_pdb).stem
+
+    descriptors = descriptor_pipeline(light_chain_seq,
+                                      heavy_chain_seq,
+                                      residue_potential_file,
+                                      antibody_name=name)
+
+    # Need to convert
+    df = pd.DataFrame(descriptors)
+    df.to_csv('electrostatics_descriptors.csv')
 
 
 if __name__ == '__main__':

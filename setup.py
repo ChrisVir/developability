@@ -19,6 +19,7 @@ mutate1 = f'{entry_point}:mutate_antibody'
 mutate_many = f'{entry_point}:mutate_multiple_antibodies'
 compute_electrostatics = f'{entry_point}:compute_electrostatics'
 calculate_surface_potential = f'{entry_point}:calculate_surface_potential'
+electrostatic_features = f'{entry_point}:calculate_electrostatic_features'
 
 setup(
     author="Chris Rivera",
@@ -43,7 +44,8 @@ setup(
             f'mutate_antibody = {mutate1}',
             f'mutate_multiple_antibodies = {mutate_many}',
             f'compute_electrostatics = {compute_electrostatics}',
-            f'calculate_surface_potential = {calculate_surface_potential}'
+            f'calculate_surface_potential = {calculate_surface_potential}',
+            f'calculate_electrostatic_features = {electrostatic_features}'
                           ]
                           },
     long_description=readme + '\n\n' + history,
