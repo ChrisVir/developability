@@ -86,7 +86,8 @@ def run_nanoshaper(prm_file, save_log=True, working_directory=None):
     return log
 
 
-def run_multivalue(coordinates, dx, multiview_path=None, output=None):
+def run_multivalue(coordinates, dx, multivalue_path=MULTIVIEW_PATH,
+                   output=None):
     """Executes multivalue from command line to obtain potential for
        desired coordinates from dx file.
     NOTE that multivalues is installed with the APBS package.
@@ -95,15 +96,17 @@ def run_multivalue(coordinates, dx, multiview_path=None, output=None):
         coordinates(Path/str): path to coordinate csv file
         dx(Path/str): path to dx file with electrostatics from ABS
         mulitiview_path(Path/str): path to directory with multiview binary
+        output(str|None): outputfile name, default 'potential_coordinates.csv'
     Returns:
         None
     """
 
     # remove this in the future.
-    if not multiview_path:
-        multivalue_path = MULTIVIEW_PATH
-
-    multivalue = multivalue_path/'multivalue'
+    # TODO this is weird implementation. 
+    if multivalue_path and isinstance(multivalue_path, Path):
+        multivalue = multivalue_path/'multivalue'
+    else:
+        multivalue = 'multivalue'
 
     if not output:
         output = 'potential_coordinates.csv'
@@ -224,7 +227,8 @@ class SurfacePotential(object):
                  input_pqr,
                  input_dx,
                  output_dir=None,
-                 nanoshaper_options=None
+                 nanoshaper_options=None, 
+                 multivalue_path=MULTIVIEW_PATH
                  ):
         """Given an pqr file and a dx with potential calculated by
 
@@ -233,6 +237,7 @@ class SurfacePotential(object):
             input_dx (str|Path): path to the dx file.
             output_dir (None|str|Path): path to save outputs.
             nanoshaper_options (dict): options for configuring NanoShaper
+            multivalue_path (Path|str): 
         """
 
         self.input_pqr = Path(input_pqr)
@@ -246,6 +251,8 @@ class SurfacePotential(object):
             output_dir.mkdir()
 
         self.nanoshaper_options = nanoshaper_options
+        self.multivalue_path = multivalue_path
+
         # generate the requried files from above and save to desired output_dir
         self.xyzr_file, self.prm_file = self._generate_input_files_()
 
@@ -302,6 +309,7 @@ class SurfacePotential(object):
 
         run_multivalue(self.coordinates_file,
                        self.input_dx,
+                       multivalue_path=self.multivalue_path,
                        output=self.potential_coordinates_file
                        )
 
