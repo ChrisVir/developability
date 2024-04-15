@@ -14,7 +14,7 @@ def run_pdb4amber(input_pdb_path, output_pdb_path, properties):
         input_pdb_path(str|path): path to the input file
         output_pdb_path(str|path|None): path to output file
         properties(dict|None): configuration for running pdb4amber
-    Returns: 
+    Returns:
         None
     """
 
@@ -31,12 +31,12 @@ def run_leap_gen_top(input_pdb_path, output_pdb_path,
                      output_top_path, output_crd_path,
                      properties=None):
     """ runs amber tools Leap using biobb_amber. The LEAP program does....
-    Args: 
+    Args:
         input_pdb_path(str|path): The input pdb path
         output_pdb_path(str|path): The output pdb path
         output_top_path(str|path): Path to the output Amber topology file
         output_crd_path(str|path): Path to the output Amber coordinate file
-    Returns: 
+    Returns:
         None
     """
     if not properties:
@@ -50,10 +50,10 @@ def run_leap_gen_top(input_pdb_path, output_pdb_path,
 
 
 def extract_energy_path(sander_log, output_path):
-    """ Uses biobb_amber minout to extract energy from sander output. 
-    Args: 
-        sander_log(str): Path to sander log file. 
-    Returns: 
+    """ Uses biobb_amber minout to extract energy from sander output.
+    Args:
+        sander_log(str): Path to sander log file.
+    Returns:
         None
     """
     process_minout(input_log_path=sander_log,
@@ -71,13 +71,15 @@ def plot_energy_path(dat_path, max_enery=1000, figsize=(4, 3)):
                      )
     df = df.query('Energy<=@max_energy')
     ax = df.plot(x="Iteration", figsize=(4, 3))
+    return ax
     # TODO add savepath
 
 
-def run_sander(input_top, input_crd, input_ref, output_traj, output_rst, output_log,
-               properties=None):
-    """Executes the Sander molecular dynamics algorithm via biobb_amber for energy minmization. 
-    Args: 
+def run_sander(input_top, input_crd, input_ref, output_traj, output_rst,
+               output_log, properties=None):
+    """Executes the Sander molecular dynamics algorithm via biobb_amber for
+       energy minmization.
+    Args:
         input_top(path|str): Amber topology file from Leap
         input_crd(path|str): Amber coordinate file from Leap
         input_ref(path|str): Amber referecnce file (TODO look up)
@@ -85,7 +87,7 @@ def run_sander(input_top, input_crd, input_ref, output_traj, output_rst, output_
         output_rst(path|str): Output of rst
         output_log(path|str): output logs
         properties(dict): dict of parameters for running sander
-    Returns: 
+    Returns:
         None
     """
     if not properties:
@@ -110,7 +112,8 @@ def run_sander(input_top, input_crd, input_ref, output_traj, output_rst, output_
 
 
 def convert_amber_to_pdb(input_top, input_crd, output_pdb):
-    """"Uses biobb_amber amber to pdb to convert topology and coordinate file to pdb
+    """"Uses biobb_amber amber to pdb to convert topology and coordinate file
+        to pdb.
     Args:
         input_top(str): input topology file
         input_crd(str): input coordinate file
@@ -133,14 +136,14 @@ class EnergyMinimizer(object):
                  leap_properties=None,
                  sander_properties=None,
                  ):
-        """ Class for runninng energy minimization. Given a PDB, the class first 
-        uses the pdb4amber program to prepare the pdb, then runs leap and finally relaxes
-        the structure using sander. 
-        Args: 
+        """ Class for runninng energy minimization. Given a PDB, the class
+            first uses the pdb4amber program to prepare the pdb,
+            then runs leap and finally relaxes the structure using sander.
+        Args:
             input_pdb(str|Path): path to the initial pdb
             output_pdb(str|Path): path to save final results
             path(str|Path|None): path to hold intermediate files and output
-            amber_properties(dict): 
+            amber_properties(dict):
             leap_properties(dict)
             sander_proeperties
         """
@@ -193,13 +196,13 @@ class EnergyMinimizer(object):
         self.sander_log = str(self.output_path/'sander.log')
 
     def minimize_energy(self, verbose=True):
-        """Executes all the steps for the energy minimization. 
-        These include 
-        1) prepping the pdb file for sander, 
-        2) running Leap to further prepare pdb for sander and 
+        """Executes all the steps for the energy minimization.
+        These include:
+        1) prepping the pdb file for sander,
+        2) running Leap to further prepare pdb for sander and
         calculate coordinate and topology files, and
-        3) running energy minimization with sander. 
-        Args: 
+        3) running energy minimization with sander.
+        Args:
             verbose(bool): if True, print out logs
         """
 
