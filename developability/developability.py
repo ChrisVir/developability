@@ -57,7 +57,7 @@ def compute_electrostatics(input_pdb, output_path):
 def calculate_surface_potential(input_pqr, input_dx, output_dir=None):
     """Calculates a surface mesh using Nanoshaper and calculates potential 
     at surface"""
-    sp = SurfacePotential(input_pqr, input_dx, output_dir)
+    sp = SurfacePotential(input_pqr, input_dx, output_dir, multivalue_path="")
     return sp.calculate_surface_potential()
 
 
