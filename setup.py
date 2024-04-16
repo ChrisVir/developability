@@ -17,9 +17,11 @@ test_requirements = []
 entry_point = 'developability.developability'
 mutate1 = f'{entry_point}:mutate_antibody'
 mutate_many = f'{entry_point}:mutate_multiple_antibodies'
+minimize_energy = f'{entry_point}:minimize_energy'
 compute_electrostatics = f'{entry_point}:compute_electrostatics'
 calculate_surface_potential = f'{entry_point}:calculate_surface_potential'
 electrostatic_features = f'{entry_point}:calculate_electrostatic_features'
+collate_descriptors = f'{entry_point}:collate_descriptors'
 
 setup(
     author="Chris Rivera",
@@ -43,9 +45,11 @@ setup(
         'console_scripts': [
             f'mutate_antibody = {mutate1}',
             f'mutate_multiple_antibodies = {mutate_many}',
+            f'minimize_energy = {minimize_energy}',
             f'compute_electrostatics = {compute_electrostatics}',
             f'calculate_surface_potential = {calculate_surface_potential}',
-            f'calculate_electrostatic_features = {electrostatic_features}'
+            f'calculate_electrostatic_features = {electrostatic_features}',
+            f'collate_descriptors = {collate_descriptors}'
                           ]
                           },
     long_description=readme + '\n\n' + history,

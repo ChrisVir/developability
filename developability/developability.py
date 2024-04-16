@@ -1,6 +1,7 @@
 """Main module."""
 import click
 import pandas as pd
+import datetime
 
 from pathlib import Path
 from developability.mutator import Mutator
@@ -8,6 +9,7 @@ from developability.electrostatics import APBS
 from developability.surface import SurfacePotential
 from developability.pdb_tools import extract_sequence_from_pdb
 from developability.descriptors import descriptor_pipeline
+from developability.energy_minimization import EnergyMinimizer
 
 
 @click.command()
@@ -32,6 +34,16 @@ def mutate_antibody(pdb, mutations, input_dir, output_dir):
     mutator = Mutator(pdb, mutations, output_path=output_dir)
     mutator.preprocess_parent_antibody()
     mutator.generate_mutants()
+
+
+@click.command()
+@click.argument('pdb')
+def minimize_energy(pdb):
+    """Minimize the energy of protein in PDB using Amber"""
+
+    output_path = Path().cwd()
+    minimizer = EnergyMinimizer(pdb, output_path=output_path)
+    minimizer.minimizer_energy()
 
 
 @click.command(help='Computes Electrostatics with APBS')
@@ -71,7 +83,7 @@ def calculate_surface_potential(input_pqr, input_dx, output_dir=None):
 @click.option('--name', default=None, help='name for the output')
 def calculate_electrostatic_features(residue_potential_file, antibody_pdb,
                                      name=None):
-    """Uses residue potential to calculate electrostatic features for model.
+    """Uses residue potential to calculate electrostatic features for model
     Args:
         residue_potential_file(str|path): path to file with residue potential
         antibody_pdb(str|Path): File for antibody (only FV)
@@ -87,12 +99,36 @@ def calculate_electrostatic_features(residue_potential_file, antibody_pdb,
 
     descriptors = descriptor_pipeline(light_chain_seq,
                                       heavy_chain_seq,
-                                      residue_potential_file,
+                                      Path(residue_potential_file),
                                       antibody_name=name)
 
     # Need to convert
     df = pd.DataFrame(descriptors)
-    df.to_csv('electrostatics_descriptors.csv')
+    df.to_csv(f'{name}_electrostatics_descriptors.csv')
+    return df
+
+
+@click.command()
+@click.argument('files', nargs=-1, type=click.Path())
+@click.option('--include_date', default=True, help='Add date to csv file')
+@click.option('--additional_description', default=None,
+              help='Add additional description to file name')
+def collate_descriptors(files, include_date=True, additional_description=None):
+    """Collates and combines descriptors  into a single csv file"""
+    descriptors_df = pd.concat([pd.read_csv(f) for f in files])
+
+    if additional_description:
+        description = '_' + '_'.join(additional_description.split())
+    else:
+        description = ''
+
+    if include_date:
+        date = '_' + datetime.datetime.today().strftime('%m-%d-%Y')
+    else:
+        date = ''
+
+    filename = f'electrostatic_descriptors{description}{date}.csv'
+    descriptors_df.to_csv(filename)
 
 
 if __name__ == '__main__':
