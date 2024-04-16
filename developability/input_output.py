@@ -9,7 +9,7 @@ def read_pqr(pqr_file):
     Returns
         pd.DataFrame
     """
-    names = ['Field_name', 'Atom_number', 'Atom_name', 'Residue_name',
+    names = ['Field_name', 'Atom_number', 'Atom_name', 'Residue_name', 'Chain',
              'Residue_number', 'X', 'Y', 'Z', 'Charge', 'Radius']
     df = pd.read_csv(pqr_file,
                      delim_whitespace=True,

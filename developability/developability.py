@@ -71,7 +71,7 @@ def calculate_surface_potential(input_pqr, input_dx, output_dir=None):
 @click.option('--name', default=None, help='name for the output')
 def calculate_electrostatic_features(residue_potential_file, antibody_pdb,
                                      name=None):
-    """Uses residue potential to calculate electrostatic features for model
+    """Uses residue potential to calculate electrostatic features for model.
     Args:
         residue_potential_file(str|path): path to file with residue potential
         antibody_pdb(str|Path): File for antibody (only FV)

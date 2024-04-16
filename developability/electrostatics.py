@@ -26,7 +26,8 @@ def run_pdb2pqr(input_pdb, output_path, options=None, save_log=False):
                    'with-ph': 7.0,
                    'titration-state-method': 'propka',
                    'drop-water': '',
-                   'include-header': ''
+                   'include-header': '',
+                   'keep-chain': ''
                    }
 
     # construct the command to be executed.
@@ -166,8 +167,10 @@ class APBS(object):
                                'with-ph': 7.0,
                                'titration-state-method': 'propka',
                                'drop-water': '',
-                               'include-header': ''
+                               'include-header': '',
+                               'keep-chain': ''
                                }
+
         self.pdb2pqr_options = pdb2pqr_options
         if not apbs_options:
             apbs_options = {'pdie': 16.0000}

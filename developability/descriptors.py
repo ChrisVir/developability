@@ -85,19 +85,26 @@ def annotate_residues_with_fv_regions(sequences, residue_pot_df,
 
     if sequences['H'] + sequences['L'] == target_sequence:
         residue = list(sequences['H'] + sequences['L'])
+
         fv_chain = ['H']*len(sequences['H']) + ['L']*len(sequences['L'])
+
         fv_number = list(range(1, len(sequences['H'])+1)) + \
             list(range(1, len(sequences['L'])+1))
+
         fv_region = list(heavy_regions['Region']) + \
             list(light_regions['Region'])
 
     elif sequences['L'] + sequences['H'] == target_sequence:
         residue = list(sequences['L'] + sequences['H'])
+
         fv_chain = ['L']*len(sequences['L']) + ['H']*len(sequences['H'])
+
         fv_number = list(range(1, len(sequences['L'])+1)) + \
             list(range(1, len(sequences['H'])+1))
+
         fv_region = list(light_regions['Region']) + \
             list(heavy_regions['Region'])
+
     else:
         raise ValueError('Could not determine chain order')
 

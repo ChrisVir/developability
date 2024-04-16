@@ -204,7 +204,8 @@ def sum_potential_over_residues(atom_pot_df, output_dir):
     def percent_positive(x):
         return (x >= 0).mean()
 
-    residue_pot_df = (atom_pot_df.groupby(['Residue_number', 'Residue_name'])
+    residue_pot_df = (atom_pot_df.groupby(['Chain', 'Residue_number',
+                                           'Residue_name'])
                       ['total_pot']
                       .agg([len, 'sum', 'mean', num_positive,
                             percent_positive]
