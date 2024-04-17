@@ -115,7 +115,10 @@ def calculate_electrostatic_features(residue_potential_file, antibody_pdb,
               help='Add additional description to file name')
 def collate_descriptors(files, include_date=True, additional_description=None):
     """Collates and combines descriptors  into a single csv file"""
-    descriptors_df = pd.concat([pd.read_csv(f) for f in files])
+    descriptors_df = (pd.concat([pd.read_csv(f) for f in files])
+                      .reset_index()
+                      .rename(columns={'Unnamed: 0': 'Antibody'})
+                      )
 
     if additional_description:
         description = '_' + '_'.join(additional_description.split())
