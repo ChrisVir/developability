@@ -537,7 +537,7 @@ class MLFlowExperiment:
                 fig, _ = plot_feature_importances(
                     grid.best_estimator_, model_name=model_name)
                 mlflow.log_figure(fig, 'feature_importances.png')
-            except:
+            except ValueError:
                 pass
 
             scores = extract_train_test_cv_scores(
@@ -568,7 +568,7 @@ class MLFlowExperiment:
             mlflow.log_params(grid.best_params_)
             try:
                 mlflow.log_params(grid.cv_results_)
-            except:
+            except ValueError:
                 pass
 
             signature = infer_signature(X, y)
