@@ -102,7 +102,7 @@ def run_multivalue(coordinates, dx, multivalue_path=MULTIVIEW_PATH,
     """
 
     # remove this in the future.
-    # TODO this is weird implementation. 
+    # TODO this is weird implementation.
     if multivalue_path and isinstance(multivalue_path, Path):
         multivalue = multivalue_path/'multivalue'
     else:
@@ -228,7 +228,7 @@ class SurfacePotential(object):
                  input_pqr,
                  input_dx,
                  output_dir=None,
-                 nanoshaper_options=None, 
+                 nanoshaper_options=None,
                  multivalue_path=MULTIVIEW_PATH
                  ):
         """Given an pqr file and a dx with potential calculated by
@@ -238,7 +238,7 @@ class SurfacePotential(object):
             input_dx (str|Path): path to the dx file.
             output_dir (None|str|Path): path to save outputs.
             nanoshaper_options (dict): options for configuring NanoShaper
-            multivalue_path (Path|str): 
+            multivalue_path (Path|str):
         """
 
         self.input_pqr = Path(input_pqr)
