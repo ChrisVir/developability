@@ -43,7 +43,7 @@ def minimize_energy(pdb):
 
     output_path = Path().cwd()
     minimizer = EnergyMinimizer(pdb, output_path=output_path)
-    minimizer.minimizer_energy()
+    minimizer.minimize_energy()
 
 
 @click.command(help='Computes Electrostatics with APBS')
