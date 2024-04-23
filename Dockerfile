@@ -25,10 +25,10 @@ ENV PATH="$PATH:/app/APBS-3.4.1.Linux/bin:/app/APBS-3.4.1.Linux/share/apbs/tools
 
 RUN echo $PATH
 
-COPY /developability/ /app/developability/
+COPY . /app/developability/
 
 RUN cd /app/developability \
  && pip install -e. 
 
-USER app_user
+#USER app_user
 

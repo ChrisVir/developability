@@ -7,6 +7,4 @@ Makefile
 .gitignore
 .travis.yml
 
-MANIFEST.in
-README.rst
-tox.ini
+
