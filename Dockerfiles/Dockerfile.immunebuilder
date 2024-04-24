@@ -15,8 +15,6 @@ RUN  micromamba config append channels conda-forge \
     && micromamba clean -a -y \
     && pip install ImmuneBuilder
 
-RUN echo $PATH
-
 
 COPY . /app/developability/
 
