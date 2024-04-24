@@ -1,0 +1,27 @@
+FROM mambaorg/micromamba
+
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
+
+USER root
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get -y install nano sudo wget zip 
+
+RUN  micromamba config append channels conda-forge \
+    && micromamba config append channels bioconda \
+    && micromamba install python=3.11 abnumber openmm ambertools ipython pdbfixer click pip jinja2 pytorch -y \
+    && micromamba clean -a -y \
+    && pip install ImmuneBuilder
+
+RUN echo $PATH
+
+
+COPY . /app/developability/
+
+RUN cd /app/developability \
+ && pip install -e. 
+
+#USER app_user
+

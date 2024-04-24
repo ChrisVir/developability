@@ -1,0 +1,10 @@
+# Exclude files in developability other than setup and source files. 
+docs/
+Notebooks/
+Makefile  
+.git/
+.github/
+.gitignore
+.travis.yml
+
+
