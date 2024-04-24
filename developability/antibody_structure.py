@@ -1,5 +1,5 @@
 import pandas as pd
-# from ImmuneBuilder import  ABodyBuilder2
+from ImmuneBuilder import ABodyBuilder2
 from pathlib import Path
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
@@ -34,7 +34,7 @@ def renumber_pdb(input_pdb, output_pdb=None):
 
 
 def predict_antibody_structures(sequences, output_dir=None):
-    """Given a dataframe with sequences, use ABodyBuilder2 model to predict 
+    """Given a dataframe with sequences, use ABodyBuilder2 model to predict
        sequences.
     Args:
         sequence(pd.DataFrame|str|Path): data frame with columns 'Name', 'VH',

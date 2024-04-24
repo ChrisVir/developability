@@ -10,6 +10,8 @@ from developability.surface import SurfacePotential
 from developability.pdb_tools import extract_sequence_from_pdb
 from developability.descriptors import descriptor_pipeline
 from developability.energy_minimization import EnergyMinimizer
+from developability.antibody_structure import (predict_antibody_structures,
+                                               renumber_pdb)
 
 
 @click.command()
@@ -132,6 +134,37 @@ def collate_descriptors(files, include_date=True, additional_description=None):
 
     filename = f'electrostatic_descriptors{description}{date}.csv'
     descriptors_df.to_csv(filename)
+
+
+@click.command()
+@click.argument('antibody_file')
+@click.option('--savepath', default=None, help='Path for saving pdbs')
+def fold_antibodies(antibody_file, savepath=None):
+    """Given a csv with antibody light chain and heavy chain sequences, folds
+       sequences using AbodyBuilder2.
+    Args:
+        antibdody_file(Path|str): path to file with antibody sequences. Must
+                                  have columns Name, VH, VL.
+    """
+    if isinstance(antibody_file, str):
+        antibody_file = Path(antibody_file)
+
+    if not savepath:
+        savepath = Path(antibody_file).parent
+    else:
+        savepath = Path(savepath)
+
+    if not savepath.exists():
+        savepath.mkdir()
+
+    sequences = pd.read_csv(antibody_file)
+    print(f'Folding {len(sequences)} antibodies')
+    predict_antibody_structures(sequences, savepath)
+
+    print(f'Renumbering {len(sequences)} antibodies')
+    for name in sequences['Name']:
+        pdb = savepath/f'{name}'.pdb
+        renumber_pdb(pdb, pdb)
 
 
 if __name__ == '__main__':

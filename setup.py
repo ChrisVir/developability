@@ -22,6 +22,8 @@ compute_electrostatics = f'{entry_point}:compute_electrostatics'
 calculate_surface_potential = f'{entry_point}:calculate_surface_potential'
 electrostatic_features = f'{entry_point}:calculate_electrostatic_features'
 collate_descriptors = f'{entry_point}:collate_descriptors'
+fold_antibodies = f'{entry_point}:fold_antibodies'
+
 
 setup(
     author="Chris Rivera",
@@ -49,7 +51,8 @@ setup(
             f'compute_electrostatics = {compute_electrostatics}',
             f'calculate_surface_potential = {calculate_surface_potential}',
             f'calculate_electrostatic_features = {electrostatic_features}',
-            f'collate_descriptors = {collate_descriptors}'
+            f'collate_descriptors = {collate_descriptors}',
+            f'fold_antibodies = {fold_antibodies}'
                           ]
                           },
     long_description=readme + '\n\n' + history,
