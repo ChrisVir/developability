@@ -3,6 +3,7 @@ from io import StringIO
 import pandas as pd
 from pathlib import Path
 import developability.data as data
+from developability.utils import ls
 
 experimental_data_path = Path(data.__path__[0]) / 'experimental_data'
 
@@ -54,3 +55,31 @@ def get_all_data_for_all_projects(projects=None,
 
     return {project: get_all_data_for_project(project, savepath) for project
             in projects}
+
+
+def format_sequences_for_ab_builder(filepath=experimental_data_path,
+                                    required_col='Heparin RRT',
+                                    savename=None):
+    def load_and_format(f):
+        cols = ['Project', 'antibody', 'Heavy', 'Light', required_col]
+        new_names = ['Project', 'Name', 'VH', 'VL', required_col]
+
+        df = (pd.read_csv(f)[cols]
+              .dropna()
+              .rename(columns=dict(zip(cols, new_names)))
+              )
+        return df
+
+    filepath = Path(filepath)
+    dfs = (pd.concat([load_and_format(f) for f in ls(filepath, False)
+                      if '_daisy_data.csv' in f.name]
+                     )
+           .reset_index(drop=True)
+           )
+
+    if not savename:
+        savename = filepath/'AntibodySequences.csv'
+
+    dfs.to_csv(savename, index=False)
+
+    return dfs
