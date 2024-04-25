@@ -3,7 +3,7 @@ from ImmuneBuilder import ABodyBuilder2
 from pathlib import Path
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 
 def renumber_pdb(input_pdb, output_pdb=None):

@@ -2,14 +2,7 @@
 developability
 ==============
 
-
-
-
-
-
 A project for mAb developability
-
-
 
 Features
 --------
