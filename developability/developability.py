@@ -175,7 +175,7 @@ def fold_antibodies(antibody_file, savepath=None):
 def calculate_antibody_features(pdb_path):
     """Calculates features for all antiboides in path"""
 
-    if isinstance(pdb_path):
+    if isinstance(pdb_path, str):
         pdb_path = Path(pdb_path)
 
     pdbs = [f for f in ls(pdb_path, False) if f.name.endswith('pdb')]
