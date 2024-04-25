@@ -11,7 +11,7 @@ RUN apt-get update \
 
 RUN  micromamba config append channels conda-forge \
     && micromamba config append channels bioconda \
-    && micromamba install python=3.11 biopython abnumber openmm ambertools ipython biopandas faiss "biobb_amber>=4.1.0" pdbfixer click pip seaborn sarge pdb2pqr jinja2 pytorch -y \
+    && micromamba install python=3.11 biopython abnumber openmm ambertools ipython biopandas faiss "biobb_amber>=4.1.0" pdbfixer click pip seaborn sarge pdb2pqr jinja2 tqdm pytorch -y \
     && micromamba clean -a -y \
     && pip install ImmuneBuilder
 
