@@ -10,7 +10,7 @@ from developability.utils import (extract_sequence_from_pdb, clean_logs,
 
 
 def run_processing_pipeline(input_pdb, output_path=None,
-                            nanoshaper_options=None, clean=True, 
+                            nanoshaper_options=None, clean=True,
                             multivalue_path=None):
     """Runs pipeline on individual antibody to extract features.
     Args:
