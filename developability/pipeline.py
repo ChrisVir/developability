@@ -10,13 +10,16 @@ from developability.utils import (extract_sequence_from_pdb, clean_logs,
 
 
 def run_processing_pipeline(input_pdb, output_path=None,
-                            nanoshaper_options=None, clean=True):
+                            nanoshaper_options=None, clean=True, 
+                            multivalue_path=None):
     """Runs pipeline on individual antibody to extract features.
     Args:
         input_pdb (path|str): path to input_pdb
         output_path(path|str): path to output
         nanoshaper_options(dict): options for nanoshaper.
         clean(bool): whether to clean out logs in execution location.
+        multivalue_path(str|path|None): Location of multivalue tool.
+                                        If in path use default None.
     Returns:
         descriptors (pd.DataFrame): one row dataframe.
     """
@@ -30,8 +33,9 @@ def run_processing_pipeline(input_pdb, output_path=None,
     pqr_file, dx_file = apbs.calculate_potential()
 
     # compute the surface
-    surface = SurfacePotential(
-        pqr_file, dx_file, nanoshaper_options=nanoshaper_options)
+    surface = SurfacePotential(pqr_file, dx_file,
+                               nanoshaper_options=nanoshaper_options,
+                               multivalue_path=multivalue_path)
     residue_pot_file = surface.calculate_surface_potential()
 
     # get the sequence from the input pdb
