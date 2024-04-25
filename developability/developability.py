@@ -163,7 +163,7 @@ def fold_antibodies(antibody_file, savepath=None):
 
     print(f'Renumbering {len(sequences)} antibodies')
     for name in sequences['Name']:
-        pdb = savepath/f'{name}'.pdb
+        pdb = savepath/f'{name}.pdb'
         renumber_pdb(pdb, pdb)
 
 

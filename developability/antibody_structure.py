@@ -15,15 +15,24 @@ def renumber_pdb(input_pdb, output_pdb=None):
         None
     """
 
+    def renumber_chain(chain):
+        new_chain = []
+
+        for i, residue in enumerate(chain.get_residues()):
+            new_residue = residue.copy()
+            res_id = residue.id
+            new_residue.id = (res_id[0], i+1, res_id[2])
+            new_chain.append(new_residue)
+
+        chain.child_list = new_chain
+        chain.child_dict = {res.id: res for res in new_chain}
+
     # parse the pdb and update numbers for each chain
     parser = PDBParser()
     struct = parser.get_structure('pdb', str(input_pdb))
     for model in struct:
         for chain in model:
-            num = 1
-            for residue in chain:
-                residue.id = (' ', num, ' ')
-                num += 1
+            renumber_chain(chain)
 
     # save the pdb
     if not output_pdb:
