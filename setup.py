@@ -23,6 +23,7 @@ calculate_surface_potential = f'{entry_point}:calculate_surface_potential'
 electrostatic_features = f'{entry_point}:calculate_electrostatic_features'
 collate_descriptors = f'{entry_point}:collate_descriptors'
 fold_antibodies = f'{entry_point}:fold_antibodies'
+calculate_antibody_features = f'{entry_point}:calculate_antibody_features'
 
 
 setup(
@@ -52,7 +53,8 @@ setup(
             f'calculate_surface_potential = {calculate_surface_potential}',
             f'calculate_electrostatic_features = {electrostatic_features}',
             f'collate_descriptors = {collate_descriptors}',
-            f'fold_antibodies = {fold_antibodies}'
+            f'fold_antibodies = {fold_antibodies}',
+            f'calculate_antibody_features = {calculate_antibody_features}'
                           ]
                           },
     long_description=readme + '\n\n' + history,

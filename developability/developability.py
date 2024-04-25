@@ -2,6 +2,7 @@
 import click
 import pandas as pd
 import datetime
+from tqdm import tqdm
 
 from pathlib import Path
 from developability.mutator import Mutator
@@ -12,6 +13,8 @@ from developability.descriptors import descriptor_pipeline
 from developability.energy_minimization import EnergyMinimizer
 from developability.antibody_structure import (predict_antibody_structures,
                                                renumber_pdb)
+from developability.utils import ls
+from developability.pipeline import run_processing_pipeline
 
 
 @click.command()
@@ -165,6 +168,20 @@ def fold_antibodies(antibody_file, savepath=None):
     for name in sequences['Name']:
         pdb = savepath/f'{name}.pdb'
         renumber_pdb(pdb, pdb)
+
+
+@click.command()
+@click.argument('pdb_path')
+def calculate_antibody_features(pdb_path):
+    """Calculates features for all antiboides in path"""
+
+    if isinstance(pdb_path):
+        pdb_path = Path(pdb_path)
+
+    pdbs = [f for f in ls(pdb_path, False) if f.name.endswith('pdb')]
+    print(f'Computing features for {len(pdbs)} antibodies')
+    _ = [run_processing_pipeline(pdb) for pdb in
+         tqdm(pdbs, total=len(pdbs))]
 
 
 if __name__ == '__main__':
