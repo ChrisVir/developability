@@ -1,4 +1,5 @@
 # pipeline for generating features
+from pathlib import Path
 
 from developability.energy_minimization import EnergyMinimizer
 from developability.electrostatics import APBS
@@ -43,7 +44,7 @@ def run_processing_pipeline(input_pdb, output_path=None,
     light_chain_seq, heavy_chain_seq = determine_chain_type(sequences)
 
     # Calculate the descriptors
-    antibody_name = input_pdb.name.split('.')[0]
+    antibody_name = Path(input_pdb).stem
     descriptors = descriptor_pipeline(
         light_chain_seq, heavy_chain_seq, residue_pot_file, antibody_name)
 

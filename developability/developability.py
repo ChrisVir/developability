@@ -173,7 +173,7 @@ def fold_antibodies(antibody_file, savepath=None):
 @click.command()
 @click.argument('pdb_path')
 def calculate_antibody_features(pdb_path):
-    """Calculates features for all antiboides in path"""
+    """Calculates features for all antibodies in path"""
 
     if isinstance(pdb_path, str):
         pdb_path = Path(pdb_path)

@@ -76,3 +76,4 @@ def predict_antibody_structures(sequences, output_dir=None):
                 antibody.save(str(output_file))
         except AssertionError:
             errors.append(name)
+    return errors

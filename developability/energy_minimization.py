@@ -149,7 +149,7 @@ class EnergyMinimizer(object):
         """
 
         self.input_pdb = input_pdb
-        self.name = Path(input_pdb).name.split('.')[0]
+        self.name = Path(input_pdb).stem
 
         if not output_path:
             output_path = Path(self.input_pdb).parent / f'{self.name}_outputs'
