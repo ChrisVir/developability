@@ -112,6 +112,7 @@ ENV/
 *.dx
 developability/*.pdb
 notebooks/*.pdb
+developability/data/pdbs/*
 *.mc
 *.csv
 *.off
@@ -123,6 +124,7 @@ notebooks/*.pdb
 #other
 *.DS_Store
 .DS_Store
+nohup.out
 
 # Include
 !tests/data/*
