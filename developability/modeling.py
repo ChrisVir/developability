@@ -25,6 +25,22 @@ from tqdm import tqdm
 # Utils
 
 
+def select_features(df, suffixes=None):
+    """Selects columns with suffix"""
+
+    if not suffixes:
+        suffixes = ['net', 'neg', 'pos']
+
+    def has_suffix(col):
+        for suffix in suffixes:
+            if col.endswith(suffix):
+                return True
+        else:
+            return False
+
+    return df[[col for col in df.columns if has_suffix(col)]]
+
+
 def get_average_predictions(X, y, model, cv=None, regression=True):
     """Get average predictions from cross validation
     Args:
@@ -346,6 +362,8 @@ classifiers = {'rf': RandomForestClassifier(random_state=42, n_jobs=4),
                'logistic': LogisticRegression(solver='saga', random_state=42),
                'et': ExtraTreesClassifier(random_state=42, n_jobs=4)
                }
+
+
 regressors = {'rf': RandomForestRegressor(random_state=42, n_jobs=4),
               'linear': LinearRegression(),
               'ridge': Ridge(),
@@ -353,6 +371,7 @@ regressors = {'rf': RandomForestRegressor(random_state=42, n_jobs=4),
               'elasticnet': ElasticNet(),
               'et': ExtraTreesRegressor()
               }
+
 
 # parameters for grid search
 classifier_params = {'rf': {'rf__n_estimators': [50, 100, 200],
@@ -490,9 +509,8 @@ class MLFlowExperiment:
         else:
             return RepeatedStratifiedKFold(n_splits=self.n_splits,
                                            n_repeats=self.n_repeats,
-                                           random_state=(self.random_state)
-                                           .split(X, y)
-                                           )
+                                           random_state=self.random_state
+                                           ).split(X, y)
 
     def gridsearch(self, model_name, features, single_feature=False):
         """Train model with gridsearch and log results to mlflow"""
