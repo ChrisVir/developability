@@ -490,7 +490,8 @@ class MLFlowExperiment:
         elif self.regression:
             scoring = ['neg_root_mean_squared_error', 'r2']
         else:
-            scoring = ['roc_auc', 'precision_recall', 'accuracy', 'f1']
+            scoring = ['roc_auc', 'average_precision', 'balanced_accuracy',
+                       'accuracy', 'f1', 'precision', 'recall']
         return scoring
 
     def __load_data__(self):
@@ -521,6 +522,7 @@ class MLFlowExperiment:
 
         pipes = Pipeline([('scaler', self.scaler()),
                           (model_name, model)])
+
         if single_feature:
             cols = self.single_features[features]
         else:
@@ -533,6 +535,7 @@ class MLFlowExperiment:
                             verbose=1, return_train_score=True)
 
         with mlflow.start_run():
+
             mlflow.set_tag('model', model_name)
             mlflow.set_tag('feature_set', features)
             mlflow.set_tag('scoring', self.scoring)
