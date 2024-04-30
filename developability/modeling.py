@@ -514,10 +514,11 @@ class MLFlowExperiment:
                                            random_state=self.random_state
                                            ).split(X, y)
 
-    def __setup__pipeline__(self, model, model_name, features):
+    def __setup__pipeline__(self, model, model_name, features, n_jobs):
         """setup a model pipeline with column tranformer"""
         transformers = [('transformer', self.scaler, features)]
-        transformer = ColumnTransformer(transformer=transformers)
+        transformer = ColumnTransformer(transformer=transformers,
+                                        n_jobs=n_jobs)
         pipeline = Pipeline([('column_transformer', transformer),
                              (model_name, model)])
         return pipeline
@@ -529,7 +530,8 @@ class MLFlowExperiment:
         model, params = get_model(model_name, regression=self.regression)
         n_jobs_for_search = 4 if model_name in ['rf', 'et'] else -1
 
-        pipes = self.__setup__pipeline__(model, model_name, features)
+        pipes = self.__setup__pipeline__(model, model_name, features, 
+                                         n_jobs_for_search)
 
         # Pipeline([('scaler', self.scaler()),(model_name, model)])
 
