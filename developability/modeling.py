@@ -16,6 +16,7 @@ from sklearn.ensemble import (RandomForestClassifier, ExtraTreesClassifier,
                               RandomForestRegressor, ExtraTreesRegressor)
 from sklearn.linear_model import (LogisticRegression, LinearRegression, Ridge,
                                   Lasso, ElasticNet)
+from sklearn.componse import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
@@ -513,6 +514,14 @@ class MLFlowExperiment:
                                            random_state=self.random_state
                                            ).split(X, y)
 
+    def __setup__pipeline__(self, model, model_name, features):
+        """setup a model pipeline with column tranformer"""
+        transformers = [('transformer', self.scaler, features)]
+        transformer = ColumnTransformer(transformer=transformers)
+        pipeline = Pipeline([('column_transformer', transformer),
+                             (model_name, model)])
+        return pipeline
+
     def gridsearch(self, model_name, features, single_feature=False):
         """Train model with gridsearch and log results to mlflow"""
 
@@ -520,8 +529,9 @@ class MLFlowExperiment:
         model, params = get_model(model_name, regression=self.regression)
         n_jobs_for_search = 4 if model_name in ['rf', 'et'] else -1
 
-        pipes = Pipeline([('scaler', self.scaler()),
-                          (model_name, model)])
+        pipes = self.__setup__pipeline__(model, model_name, features)
+
+        # Pipeline([('scaler', self.scaler()),(model_name, model)])
 
         if single_feature:
             cols = self.single_features[features]
