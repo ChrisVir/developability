@@ -122,7 +122,10 @@ developability/data/pdbs/*
 *.top
 mlartifacts/*
 mlruns/*
-
+Dockerfiles/resources/dev_models/hep_classifier/*
+Dockerfiles/resources/dev_models/hep_regressor/*
+Dockerfiles/resources/data/*
+*.parquet
 
 #other
 *.DS_Store
