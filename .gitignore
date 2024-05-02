@@ -126,6 +126,10 @@ Dockerfiles/resources/dev_models/hep_classifier/*
 Dockerfiles/resources/dev_models/hep_regressor/*
 Dockerfiles/resources/data/*
 *.parquet
+*.nf
+nextflow.config
+.nextflow/*
+
 
 #other
 *.DS_Store

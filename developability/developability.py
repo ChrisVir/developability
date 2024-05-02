@@ -180,8 +180,10 @@ def calculate_antibody_features(pdb_path):
 
     pdbs = [f for f in ls(pdb_path, False) if f.name.endswith('pdb')]
     print(f'Computing features for {len(pdbs)} antibodies')
-    _ = [run_processing_pipeline(pdb) for pdb in
-         tqdm(pdbs, total=len(pdbs))]
+    descriptors = [run_processing_pipeline(pdb) for pdb in
+                   tqdm(pdbs, total=len(pdbs))]
+    descriptors = pd.concat(descriptors)
+    descriptors.to_parquet(pdb_path.parent/'descriptors.parquet')
 
 
 if __name__ == '__main__':
