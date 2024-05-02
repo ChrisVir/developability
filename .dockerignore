@@ -6,5 +6,8 @@ Makefile
 .github/
 .gitignore
 .travis.yml
-
+developability/data
+Dockerfiles/
+mlartifacts/
+mlruns/
 

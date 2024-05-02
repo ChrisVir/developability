@@ -6,5 +6,6 @@ Makefile
 .github/
 .gitignore
 .travis.yml
-
+Dockerfiles/
+developability/data
 
