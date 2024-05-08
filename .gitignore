@@ -126,7 +126,9 @@ Dockerfiles/resources/dev_models/hep_classifier/*
 Dockerfiles/resources/dev_models/hep_regressor/*
 Dockerfiles/resources/data/*
 *.parquet
+*.pq
 *.nf
+*.pkl
 nextflow.config
 .nextflow/*
 

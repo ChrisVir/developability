@@ -16,7 +16,7 @@ from sklearn.ensemble import (RandomForestClassifier, ExtraTreesClassifier,
                               RandomForestRegressor, ExtraTreesRegressor)
 from sklearn.linear_model import (LogisticRegression, LinearRegression, Ridge,
                                   Lasso, ElasticNet)
-from sklearn.componse import ColumnTransformer
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
@@ -479,6 +479,8 @@ class MLFlowExperiment:
             scaler = StandardScaler
         self.scaler = scaler
 
+        self.fitted_models = {}
+
     def __set_scoring__(self, scoring):
         """set scoring for regression or classification
         Args:
@@ -517,7 +519,7 @@ class MLFlowExperiment:
     def __setup__pipeline__(self, model, model_name, features, n_jobs):
         """setup a model pipeline with column tranformer"""
         transformers = [('transformer', self.scaler, features)]
-        transformer = ColumnTransformer(transformer=transformers,
+        transformer = ColumnTransformer(transformers=transformers,
                                         n_jobs=n_jobs)
         pipeline = Pipeline([('column_transformer', transformer),
                              (model_name, model)])
@@ -530,10 +532,10 @@ class MLFlowExperiment:
         model, params = get_model(model_name, regression=self.regression)
         n_jobs_for_search = 4 if model_name in ['rf', 'et'] else -1
 
-        pipes = self.__setup__pipeline__(model, model_name, features, 
-                                         n_jobs_for_search)
+        # pipes = self.__setup__pipeline__(model, model_name, features,
+        #                                 n_jobs_for_search)
 
-        # Pipeline([('scaler', self.scaler()),(model_name, model)])
+        pipes = Pipeline([('scaler', self.scaler()), (model_name, model)])
 
         if single_feature:
             cols = self.single_features[features]
@@ -544,7 +546,7 @@ class MLFlowExperiment:
         cv = self.get_cv_splitter(X, y)
         grid = GridSearchCV(pipes, params, scoring=self.scoring, cv=cv,
                             n_jobs=n_jobs_for_search, refit=self.scoring[0],
-                            verbose=1, return_train_score=True)
+                            verbose=0, return_train_score=True)
 
         with mlflow.start_run():
 
@@ -608,6 +610,8 @@ class MLFlowExperiment:
             mlflow.sklearn.log_model(
                 grid.best_estimator_, model_name, signature=signature)
 
+            best_model = grid.best_estimator_
+            self.fitted_models.setdefault((features, model_name), best_model)
             return grid.best_estimator_, grid.best_params_, grid.best_score_
 
     def set_experiment(self):
