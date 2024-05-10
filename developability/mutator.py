@@ -16,12 +16,14 @@ def parse_mutant_string(mutant_string):
     """
 
     mutants = []
-    for m in mutant_string.split(','):
-        m = m.strip()
-        aa1 = seq3(m[0]).upper()
-        pos = int(m[1:-1])
-        aa2 = seq3(m[-1]).upper()
-        mutants.append([aa1, pos, aa2])
+    if mutant_string:
+        mutant_strings = mutant_string.split(',')
+        for m in mutant_strings:
+            m = m.strip()
+            aa1 = seq3(m[0]).upper()
+            pos = int(m[1:-1])
+            aa2 = seq3(m[-1]).upper()
+            mutants.append([aa1, pos, aa2])
     return mutants
 
 
@@ -60,6 +62,29 @@ def generate_dict_of_mutations(light_chain_mutations, heavy_chain_mutations,
                  }
 
     return mutations
+
+
+def generate_ab_filename(file, lc_mutations, hc_mutations):
+    """Generates a file name given a file (PATH) object from mutation
+    strings"""
+
+    if isinstance(file, str):
+        file = Path(file)
+
+    stem = file.stem
+    stem = stem.replace('_fv_only', '')
+    parts = [stem]
+
+    if lc_mutations.strip():
+        parts.append('L')
+        parts.append(lc_mutations.replace(', ', '-'))
+
+    if hc_mutations.strip():
+        parts.append('H')
+        parts.append(hc_mutations.replace(', ', '-'))
+
+    filename = '_'.join(parts) + '.pdb'
+    return filename
 
 
 class Mutator:
@@ -137,6 +162,7 @@ class Mutator:
         """ generate all the mutants"""
         print('Generating mutants')
         n_mutants = len(self.mutation_df)
+
         filenames = [self.generate_mutant(idx) for idx in range(n_mutants)]
         return filenames
 
@@ -146,13 +172,12 @@ class Mutator:
         lc_mutations = self.mutation_df[self.light_chain_mutations].iloc[idx]
         hc_mutations = self.mutation_df[self.heavy_chain_mutations].iloc[idx]
 
+        # Create the file name if needed.
         if self.filename:
             filename = self.mutation_df['filename'].iloc[idx]
         else:
-            stem = self.fv_only_pdb.stem
-            lc_mutations_str = lc_mutations.replace(', ', '-')
-            hc_mutations_str = hc_mutations.replace(', ', '-')
-            filename = f'{stem}_L_{lc_mutations_str}_H_{hc_mutations_str}.pdb'
+            filename = generate_ab_filename(self.fv_only_pdb, lc_mutations,
+                                            hc_mutations)
 
         mutations = generate_dict_of_mutations(lc_mutations, hc_mutations,
                                                lc_length=self.lc_length,
@@ -161,10 +186,12 @@ class Mutator:
         mutations = {k: convert_mutant_tuples_to_strings(v) for k, v in
                      mutations.items()}
 
-        mutate_protein(self.fv_only_pdb, mutations,
+        mutate_protein(self.fv_only_pdb,
+                       mutations,
                        output_path=self.output_path,
                        output_filename=filename,
-                       pH=self.pH, transform_mutants=False)
+                       pH=self.pH,
+                       transform_mutants=False)
 
         return filename
 

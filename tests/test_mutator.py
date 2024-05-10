@@ -69,11 +69,16 @@ def test_Mutator_preprocess_parent_antibody():
 
 def test_Mutator_generate_mutants():
     pdb = data_path / 'abciximab_6v4p.pdb'
-    mutant_df = pd.DataFrame(dict(VH=['V2Q, Q3L, L4V'], VL=['I2Q, V3L']))
+    mutant_df = pd.DataFrame(dict(VH=['V2Q, Q3L, L4V',  '', 'V2Q, Q3L, L4V'],
+                                  VL=['I2Q, V3L', 'I2Q, V3L', '']))
+
     mutator = Mutator(pdb, mutant_df)
     mutator.preprocess_parent_antibody()
     file_names = mutator.generate_mutants()
+    print(file_names)
+
     file_paths = [mutator.output_path / name for name in file_names]
+    # print(file_paths)
 
     for i, f in enumerate(file_paths):
         assert f.exists()
@@ -91,10 +96,10 @@ def test_Mutator_generate_mutants():
         for m in hc_mutations:
             assert seq3(seqs['H'][m[1]-1]).upper() == m[2]
 
-        # clean the generated pdb and fv_only_pdb
-        mutator.fv_only_pdb.unlink()
-        for f in file_paths:
-            f.unlink()
+    # clean the generated pdb and fv_only_pdb
+    mutator.fv_only_pdb.unlink()
+    for f in file_paths:
+        f.unlink()
 
 
 def test_mutate_antibody_cli():
@@ -112,7 +117,7 @@ def test_mutate_antibody_cli():
 
 
 if __name__ == '__main__':
-    print(test_generate_dict_of_mutations())
+    # print(test_generate_dict_of_mutations())
     test_Mutator()
     test_Mutator_preprocess_parent_antibody()
     test_Mutator_generate_mutants()
