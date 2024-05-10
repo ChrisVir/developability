@@ -7,7 +7,7 @@ USER root
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get -y install nano sudo wget zip \ 
+    && apt-get -y install nano sudo wget zip procps \ 
     && wget https://github.com/Electrostatics/apbs/releases/download/v3.4.1/APBS-3.4.1.Linux.zip \
     && unzip APBS-3.4.1.Linux.zip \
     && rm APBS-3.4.1.Linux.zip \

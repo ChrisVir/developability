@@ -121,7 +121,9 @@ class Mutator:
         self.chains = [self.light_chain_id, self.heavy_chain_id]
 
         if isinstance(mutation_df, str) or isinstance(mutation_df, Path):
-            mutation_df = pd.read_csv(mutation_df)
+            mutation_df = (pd.read_csv(mutation_df)
+                           .fillna('')
+                           )
 
         self.mutation_df = mutation_df
         self.light_chain_mutations = light_chain_mutations

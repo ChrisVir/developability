@@ -106,8 +106,8 @@ def test_mutate_antibody_cli():
     pdb = data_path / 'abciximab_6v4p.pdb'
     mutations = data_path / 'mutations.csv'
 
-    mutant_df = pd.DataFrame(dict(VH=['V2Q, Q3L, L4V', 'V2Q, Q3L, L4K'],
-                                  VL=['I2Q, V3L', 'I2Q, V3K']))
+    mutant_df = pd.DataFrame(dict(VH=['V2Q, Q3L, L4V',  '', 'V2Q, Q3L, L4V'],
+                                  VL=['I2Q, V3L', 'I2Q, V3L', '']))
 
     mutant_df.to_csv(mutations, index=False)
     file_paths = mutate_antibody(pdb, mutations)
