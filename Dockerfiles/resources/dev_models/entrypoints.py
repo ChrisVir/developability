@@ -37,7 +37,7 @@ def load_input_data(filepath, columns=None):
         return pd.read_parquet(filepath, columns=columns)
 
     elif filepath.suffix == '.csv':
-        return pd.read_csv(filepath, columns=columns)
+        return pd.read_csv(filepath, usecols=columns)
 
 
 def save_predictions(predictions, filename):
