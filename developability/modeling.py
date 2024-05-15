@@ -1,7 +1,6 @@
 # Tools for modeling
 import mlflow
 from mlflow.models import infer_signature
-
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -16,13 +15,16 @@ from sklearn.ensemble import (RandomForestClassifier, ExtraTreesClassifier,
                               RandomForestRegressor, ExtraTreesRegressor)
 from sklearn.linear_model import (LogisticRegression, LinearRegression, Ridge,
                                   Lasso, ElasticNet)
-from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from pathlib import Path
+from sklego.preprocessing import FormulaicTransformer
+import tempfile
 from tqdm import tqdm
 
+import warnings
+warnings.filterwarnings("ignore")
 # Utils
 
 
@@ -97,16 +99,20 @@ def get_feature_importances(model):
         if len(shape) == 2:
             importances = importances[0]
 
-    features = model[:-1].get_feature_names_out()
-    s = (pd.Series(importances, index=features)
-         .sort_values()
-         )
+    # get the feature names
+    if isinstance(model[-2], FormulaicTransformer):
+        formula_transformer = model[-2]
+
+        features = formula_transformer.model_spec_.column_names
+    else:
+        features = model[:-1].get_feature_names_out()
+    s = pd.Series(importances, index=features)
     return s
 
 # Visualization
 
 
-def plot_feature_importances(model, n_features=20, ax=None, model_name=None):
+def plot_feature_importances(model, n_features=30, ax=None, model_name=None):
     """
     Plot feature importances or coefficients of a model.
 
@@ -127,7 +133,12 @@ def plot_feature_importances(model, n_features=20, ax=None, model_name=None):
         'feature_importances_' or 'coef_' attribute.
 
     """
-    s = get_feature_importances(model).iloc[:n_features]
+    feature_importances = (get_feature_importances(model)
+                           .sort_values(key=np.abs, ascending=False)
+                           .head(n_features)
+                           .sort_values(ascending=False)
+                           )
+
     if hasattr(model[-1], 'feature_importances_'):
         title = 'Feature Importances'
     if hasattr(model[-1], 'coef_'):
@@ -140,11 +151,11 @@ def plot_feature_importances(model, n_features=20, ax=None, model_name=None):
 
     if ax:
         fig = plt.gca()
-        ax = s.plot(kind='barh', ax=ax)
+        ax = feature_importances.plot(kind='barh', ax=ax)
     else:
         fig, ax = plt.subplots(1, 1, figsize=(8, 6))
         fig.set_size_inches(9, 5)
-        ax = s.plot(kind='barh', ax=ax)
+        ax = feature_importances.plot(kind='barh', ax=ax)
 
     ax.set_title(title)
     plt.tight_layout()
@@ -428,14 +439,21 @@ def get_model(model_name, regression=True):
 
 class MLFlowExperiment:
 
-    def __init__(self, data_path, target, experiment_name, regression=True,
+    def __init__(self, data, target, experiment_name, regression=True,
                  n_splits=5, n_repeats=10, random_state=42, scoring=None,
                  scaler=None, models=None, tracking_uri=None,
-                 feature_sets=None, fit_single_features=False):
+                 feature_sets=None, fit_single_features=False,
+                 pipeline_func=None,
+                 pipeline_kws=None, description=None):
         """ class to organize experiment"""
 
-        self.data_path = Path(data_path)
-        self.data = self.__load_data__()
+        if isinstance(data, str) or isinstance(data, Path):
+            if isinstance(data, str):
+                data = Path(data)
+            self.data = self.__load_data__()
+        else:
+            self.data = data
+
         self.target = target
         self.experiment_name = experiment_name
         self.regression = regression
@@ -480,6 +498,9 @@ class MLFlowExperiment:
         self.scaler = scaler
 
         self.fitted_models = {}
+        self.pipeline_func = pipeline_func
+        self.pipeline_kws = pipeline_kws
+        self.description = description
 
     def __set_scoring__(self, scoring):
         """set scoring for regression or classification
@@ -499,11 +520,11 @@ class MLFlowExperiment:
 
     def __load_data__(self):
         """load data from path"""
-        if self.data_path.name.endswith('.csv'):
-            return pd.read_csv(self.data_path)
-        elif (self.data_path.name.endswith('.parquet') or
-              self.data_path.name.endswith('.pq')):
-            return pd.read_parquet(self.data_path)
+        if self.data.name.endswith('.csv'):
+            return pd.read_csv(self.data)
+        elif (self.data.name.endswith('.parquet') or
+              self.data.name.endswith('.pq')):
+            return pd.read_parquet(self.data)
 
     def get_cv_splitter(self, X, y):
         if self.regression:
@@ -516,33 +537,33 @@ class MLFlowExperiment:
                                            random_state=self.random_state
                                            ).split(X, y)
 
-    def __setup__pipeline__(self, model, model_name, features, n_jobs):
-        """setup a model pipeline with column tranformer"""
-        transformers = [('transformer', self.scaler, features)]
-        transformer = ColumnTransformer(transformers=transformers,
-                                        n_jobs=n_jobs)
-        pipeline = Pipeline([('column_transformer', transformer),
-                             (model_name, model)])
-        return pipeline
+    def __setup__pipeline__(self, model, model_name, features):
+        """setup a model pipeline"""
 
-    def gridsearch(self, model_name, features, single_feature=False):
+        if not self.pipeline_func:
+            pipes = Pipeline([('scaler', self.scaler()), (model_name, model)])
+        else:
+            pipes = self.pipeline_func(descriptors=features, model=model,
+                                       model_name=model_name,
+                                       **self.pipeline_kws
+                                       )
+        return pipes
+
+    def gridsearch(self, model_name, feature_set, single_feature=False):
         """Train model with gridsearch and log results to mlflow"""
 
         # set up the model and training data
         model, params = get_model(model_name, regression=self.regression)
         n_jobs_for_search = 4 if model_name in ['rf', 'et'] else -1
 
-        # pipes = self.__setup__pipeline__(model, model_name, features,
-        #                                 n_jobs_for_search)
-
-        pipes = Pipeline([('scaler', self.scaler()), (model_name, model)])
-
         if single_feature:
-            cols = self.single_features[features]
+            feature_columns = self.single_features[feature_set]
         else:
-            cols = self.feature_sets[features]
+            feature_columns = self.feature_sets[feature_set]
 
-        X, y = self.data[cols].copy(), self.data[self.target].copy()
+        pipes = self.__setup__pipeline__(model, model_name, feature_columns)
+
+        X, y = self.data[feature_columns].copy(), self.data[self.target].copy()
         cv = self.get_cv_splitter(X, y)
         grid = GridSearchCV(pipes, params, scoring=self.scoring, cv=cv,
                             n_jobs=n_jobs_for_search, refit=self.scoring[0],
@@ -551,9 +572,11 @@ class MLFlowExperiment:
         with mlflow.start_run():
 
             mlflow.set_tag('model', model_name)
-            mlflow.set_tag('feature_set', features)
+            mlflow.set_tag('feature_set', feature_set)
             mlflow.set_tag('scoring', self.scoring)
-            mlflow.set_tag('Number_of_features', len(cols))
+            mlflow.set_tag('Number_of_features', len(feature_columns))
+            if self.description:
+                mlflow.set_tag('Description', self.description)
 
             grid.fit(X, y)
 
@@ -565,7 +588,9 @@ class MLFlowExperiment:
 
             predictions_file_name = Path().cwd() / 'predictions.csv'
             predictions_df.to_csv(predictions_file_name)
+
             mlflow.log_artifact(predictions_file_name)
+
             predictions_file_name.unlink()
 
             try:
@@ -586,7 +611,7 @@ class MLFlowExperiment:
                                     'mean_cv_r2': r2_score(y, y_pred)})
 
                 fig, _ = plot_regression_performance_from_predictions(
-                    y, y_pred, model_name=model_name)
+                    y, y_pred, model_name=model_name, dataset='CV Validation')
                 mlflow.log_figure(fig, 'prediction_error.png')
 
             else:
@@ -597,12 +622,14 @@ class MLFlowExperiment:
                 mlflow.log_metrics(mets)
 
                 fig, _ = plot_classification_performance_from_predictions(
-                    y, y_pred, model_name=model_name)
+                    y, y_pred, model_name=model_name, dataset='CV Validation')
                 mlflow.log_figure(fig, 'classification_performance.png')
 
             mlflow.log_params(grid.best_params_)
+
+            # log the cv results
             try:
-                mlflow.log_params(grid.cv_results_)
+                self._log_cv_results(grid)
             except ValueError:
                 pass
 
@@ -610,9 +637,18 @@ class MLFlowExperiment:
             mlflow.sklearn.log_model(
                 grid.best_estimator_, model_name, signature=signature)
 
+            # add best model to the best.
             best_model = grid.best_estimator_
-            self.fitted_models.setdefault((features, model_name), best_model)
+            self.fitted_models.setdefault((feature_set, model_name),
+                                          best_model)
             return grid.best_estimator_, grid.best_params_, grid.best_score_
+
+    def _log_cv_results(self, grid):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname = Path(tmpdir)/'cv_results.csv'
+            df = pd.DataFrame(grid.cv_results_)
+            df.to_csv(fname)
+            mlflow.log_artifact(fname)
 
     def set_experiment(self):
         """Set up mlflow experiment"""
