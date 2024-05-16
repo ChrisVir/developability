@@ -131,7 +131,7 @@ def make_pca_pipeline_with_intercept(descriptors, intercept=None, model=None,
                                      categories='auto', scaler=MinMaxScaler,
                                      model_name=None, n_components=5,
                                      return_column_transformer=False):
-    """Returns a pca_pipeline using intercept. 
+    """Returns a pca_pipeline using intercept.
     """
 
     return make_pca_pipeline(descriptors, intercept, model, categories,
