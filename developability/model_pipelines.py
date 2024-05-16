@@ -84,30 +84,33 @@ def get_formulaic_column_names(pipeline, step=1):
     return pipeline[step].model_spec_.column_names
 
 
-def make_pca_pipeline_with_intercept(descriptors, intercept=None, model=None,
-                                     categories='auto', scaler=MinMaxScaler,
-                                     model_name=None, n_components=5,
-                                     return_column_transformer=False):
-    if not intercept:
-        intercept = descriptors[0]
-        descriptors = descriptors[1:]
-    else:
-        descriptors = [col for col in descriptors
-                       if col != intercept]
+def make_pca_pipeline(descriptors, intercept=None, model=None,
+                      categories='auto', scaler=MinMaxScaler,
+                      model_name=None, n_components=5,
+                      return_column_transformer=False,
+                      use_intercept=True):
 
-    intercept_transformer = ('intercept',
-                             OneHotEncoder(categories=categories,
-                                           dtype=np.int32,
-                                           handle_unknown='ignore',
-                                           sparse_output=False),
-                             [intercept]
-                             )
+    descriptors = [col for col in descriptors if col != intercept]
 
+    if use_intercept:
+        intercept_transformer = ('intercept',
+                                 OneHotEncoder(categories=categories,
+                                               dtype=np.int32,
+                                               handle_unknown='ignore',
+                                               sparse_output=False),
+                                 [intercept]
+                                 )
+    # set up the steps for pca.
     steps = [('scaler', scaler()),
              ('pca', PCA(n_components=n_components))
              ]
+
     pca_transformer = ('pca', Pipeline(steps), descriptors)
-    transformers = [intercept_transformer, pca_transformer]
+
+    if use_intercept:
+        transformers = [intercept_transformer, pca_transformer]
+    else:
+        transformers = [pca_transformer]
 
     ct = ColumnTransformer(transformers=transformers)
 
@@ -122,6 +125,18 @@ def make_pca_pipeline_with_intercept(descriptors, intercept=None, model=None,
     pipes = Pipeline([('column_transformer', ct), (model_name, model)])
 
     return pipes
+
+
+def make_pca_pipeline_with_intercept(descriptors, intercept=None, model=None,
+                                     categories='auto', scaler=MinMaxScaler,
+                                     model_name=None, n_components=5,
+                                     return_column_transformer=False):
+    """Returns a pca_pipeline using intercept. 
+    """
+
+    return make_pca_pipeline(descriptors, intercept, model, categories,
+                             MinMaxScaler, model_name, n_components,
+                             return_column_transformer, use_intercept=True)
 
 
 def normalize_by_row(df):
@@ -165,7 +180,8 @@ def make_normalize_transformer_pipeline(descriptors, total_column=None,
                                         intercept='Project',
                                         model=None, scaler=MinMaxScaler,
                                         categories='auto', model_name=None,
-                                        return_column_transformer=False):
+                                        return_column_transformer=False,
+                                        use_intercept=True):
 
     if not total_column:
         total_column = [col for col in descriptors if 'total' in col.lower()]
@@ -176,14 +192,15 @@ def make_normalize_transformer_pipeline(descriptors, total_column=None,
     descriptors = [col for col in descriptors
                    if col != intercept
                    and 'total' not in col.lower()]
-
-    intercept_transformer = ('intercept',
-                             OneHotEncoder(categories=categories,
-                                           dtype=np.int32,
-                                           handle_unknown='ignore',
-                                           sparse_output=False),
-                             [intercept]
-                             )
+    if use_intercept:
+        # Consider refactoring this to own function DRY
+        intercept_transformer = ('intercept',
+                                 OneHotEncoder(categories=categories,
+                                               dtype=np.int32,
+                                               handle_unknown='ignore',
+                                               sparse_output=False),
+                                 [intercept]
+                                 )
 
     normalize_transformer = ('normalize_by_row',
                              make_normalize_transformer(),
@@ -193,8 +210,11 @@ def make_normalize_transformer_pipeline(descriptors, total_column=None,
                          scaler(),
                          total_column)
 
-    transformers = [intercept_transformer, normalize_transformer,
-                    total_transformer]
+    if use_intercept:
+        transformers = [intercept_transformer, normalize_transformer,
+                        total_transformer]
+    else:
+        transformers = [normalize_transformer, total_transformer]
 
     ct = ColumnTransformer(transformers=transformers)
 
