@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import mlflow
+from mlflow.sklearn import (get_default_conda_env,
+                            save_model)
 
 
 def runs_to_dataframe(runs):
@@ -146,6 +148,8 @@ def save_sklearn_model_to_new_location(source_path, destination_path):
     if not destination_path.exists():
         destination_path.mkdir()
 
-    mlflow.sklearn.save_model(sk_model=model,
-                              path=destination_path,
-                              signature=signature)
+    save_model(sk_model=model,
+               path=destination_path,
+               signature=signature,
+               serialization_format='pickle',
+               conda_env=get_default_conda_env(False))

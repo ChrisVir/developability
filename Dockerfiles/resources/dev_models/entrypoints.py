@@ -1,15 +1,15 @@
 """Main module."""
 import click
+import numpy as np
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
 from mlflow import sklearn
 from mlflow.models import get_model_info
-
+from joblib import load
 
 base_path = Path('/app/dev_models/')
-model_paths = {'heparin_regression': base_path/'hep_regressor',
-               'heparin_classification': base_path/'hep_classifier'
+model_paths = {'heparin_regression': base_path/'hep_regressor'
                }
 
 
@@ -27,8 +27,18 @@ def extract_metadata_from_signature(model_path):
     return get_inputs(signature), get_outputs(signature)
 
 
-def load_model(model_path):
-    return sklearn.load_model(str(model_path))
+def load_joblib_model(model_path, filename='model.joblib'):
+    """load a model serialized as joblib"""
+    model_path = Path(model_path)
+    with open(model_path/filename, 'rb') as f:
+        return load(f)
+
+
+def load_model(model_path, serialization='cloudpickle'):
+    if serialization == 'joblib':
+        return load_joblib_model(model_path)
+    elif serialization == 'cloudpickle':
+        return sklearn.load_model(str(model_path))
 
 
 def load_input_data(filepath, columns=None):
@@ -46,7 +56,7 @@ def save_predictions(predictions, filename):
         predictions.to_parquet(filename)
 
     if filename.suffix == '.csv':
-        predictions.to_csv(filename)
+        predictions.to_csv(filename, index=False)
 
 
 def batch_predict(model_path, input_data_path, predict_proba=False):
@@ -74,37 +84,48 @@ def batch_predict(model_path, input_data_path, predict_proba=False):
 @click.option('--output_dir', default=None, help='directory for output file')
 def predict_heparin_binding(input_data_path, output_filename=None,
                             output_dir=None):
-    """ predict model """
+    """ Predicts the Heparin RRT. Note that this model expects a
+    Project column for indicator. """
+
+    def relabel_project(label):
+        """Relabels the project column to ensure it works"""
+        projects = ['Therapeutic', 'MPK65', 'FNI9v81',
+                    'RSD5', 'MPK201', 'MPK190', 'MPK176']
+        if label not in projects:
+            return 'Therapeutic'
+        else:
+            return label
 
     model_path = model_paths['heparin_regression']
-    predictions = batch_predict(model_path, input_data_path)
+    model = load_model(model_path)
 
+    X = load_input_data(input_data_path, columns=None)
+    cols, _ = extract_metadata_from_signature(model_path)
+
+    # ensure that the data has project column and correct columns
+    if 'Project' not in X.columns:
+        X['Project'] = 'Therapeutic'
+    else:
+        X['Project'] = X['Project'].apply(relabel_project)
+    
+    # name for output
+    if 'antibody' in X:
+        antibody = X['antibody'].values
+    else:
+        antibody = np.arrange(X)
+
+    # get the desired cols
+    X = X[cols]
+    preds = model.predict(X)
+
+    predictions = pd.DataFrame({'antibody': antibody,
+                                'HeparinRRT': preds
+                                })
     if not output_dir:
         output_dir = Path(input_data_path).parent
 
     if not output_filename:
         today = datetime.today().strftime('%m-%d-%Y')
         output_filename = f'heparin_regression_results_{today}.csv'
-
-    save_predictions(predictions, output_dir/output_filename)
-
-
-@click.command()
-@click.argument('input_data_path')
-@click.option('--output_filename', default=None, help='name for output file')
-@click.option('--output_dir', default=None, help='directory for output file')
-def classify_heparin_binding(input_data_path, output_filename=None,
-                             output_dir=None):
-    """ classify heparin_binding """
-
-    model_path = model_paths['heparin_classification']
-    predictions = batch_predict(model_path, input_data_path, True)
-
-    if not output_dir:
-        output_dir = Path(input_data_path).parent
-
-    if not output_filename:
-        today = datetime.today().strftime('%m-%d-%Y')
-        output_filename = f'heparin_classification_results_{today}.csv'
 
     save_predictions(predictions, output_dir/output_filename)

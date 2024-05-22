@@ -10,8 +10,7 @@ setup(name='developability_models',
       packages=find_packages(include=['dev_models', 'dev_models.*']),
       entry_points={
           'console_scripts': [
-              f'predict_heparin_binding = {entry}:predict_heparin_binding',
-              f'classify_heparin_binding = {entry}:classify_heparin_binding'
+              f'predict_heparin_binding = {entry}:predict_heparin_binding'
               ]
       }
 

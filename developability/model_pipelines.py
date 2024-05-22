@@ -1,7 +1,8 @@
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (MinMaxScaler, OrdinalEncoder,
-                                   FunctionTransformer, OneHotEncoder)
+                                   FunctionTransformer, OneHotEncoder,
+                                   Normalizer)
 from sklego.preprocessing import FormulaicTransformer
 from sklearn.decomposition import PCA
 from sklearn.linear_model import LinearRegression
@@ -181,7 +182,8 @@ def make_normalize_transformer_pipeline(descriptors, total_column=None,
                                         model=None, scaler=MinMaxScaler,
                                         categories='auto', model_name=None,
                                         return_column_transformer=False,
-                                        use_intercept=True):
+                                        use_intercept=True,
+                                        use_normalizer=True):
 
     if not total_column:
         total_column = [col for col in descriptors if 'total' in col.lower()]
@@ -201,10 +203,15 @@ def make_normalize_transformer_pipeline(descriptors, total_column=None,
                                                sparse_output=False),
                                  [intercept]
                                  )
-
-    normalize_transformer = ('normalize_by_row',
-                             make_normalize_transformer(),
-                             descriptors)
+    if not use_normalizer:
+        normalize_transformer = ('normalize_by_row',
+                                 make_normalize_transformer(),
+                                 descriptors)
+    else:
+        normalize_transformer = ('normalize_by_row',
+                                 Normalizer(norm='l1'),
+                                 descriptors
+                                 )
 
     total_transformer = ('total',
                          scaler(),
