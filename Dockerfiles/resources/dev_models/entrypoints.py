@@ -107,18 +107,20 @@ def predict_heparin_binding(input_data_path, output_filename=None,
         X['Project'] = 'Therapeutic'
     else:
         X['Project'] = X['Project'].apply(relabel_project)
-    
+
     # name for output
-    if 'antibody' in X:
+    if 'Antibody' in X:
+        antibody = X['Antibody'].values
+    elif 'antibody' in X:
         antibody = X['antibody'].values
     else:
-        antibody = np.arrange(X)
+        antibody = np.arange(len(X))
 
     # get the desired cols
     X = X[cols]
     preds = model.predict(X)
 
-    predictions = pd.DataFrame({'antibody': antibody,
+    predictions = pd.DataFrame({'Antibody': antibody,
                                 'HeparinRRT': preds
                                 })
     if not output_dir:

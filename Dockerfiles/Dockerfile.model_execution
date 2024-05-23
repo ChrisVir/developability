@@ -17,10 +17,12 @@ RUN  micromamba config append channels conda-forge \
     && micromamba clean -a -y 
 
 
+RUN echo $HOME
+
 COPY /resources/ /app/
 
 
-RUN echo $HOME
+
 
 RUN pip install .
 
